@@ -1,9 +1,10 @@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { DEPARTMENT_COMPARISON } from '../../data/mockData';
+import { Card } from '@/components/ui/card';
 
 export default function DepartmentComparison() {
   return (
-    <div className="card p-5 h-full">
+    <Card className="p-5 h-full">
       <h3 className="font-semibold text-gray-900 mb-1">Department-wise EI Comparison</h3>
       <p className="text-xs text-gray-500 mb-4">Average EI score per department</p>
       <ResponsiveContainer width="100%" height={220}>
@@ -17,6 +18,6 @@ export default function DepartmentComparison() {
           <Bar dataKey="avgEI" fill="#4F46E5" radius={[4, 4, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
-    </div>
+    </Card>
   );
 }

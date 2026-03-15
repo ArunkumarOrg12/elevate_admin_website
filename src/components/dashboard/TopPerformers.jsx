@@ -1,9 +1,9 @@
-import StatusBadge from '../common/StatusBadge';
 import { TOP_PERFORMERS } from '../../data/mockData';
+import { Card } from '@/components/ui/card';
 
 export default function TopPerformers() {
   return (
-    <div className="card p-5">
+    <Card className="p-5">
       <h3 className="font-semibold text-gray-900 mb-4">Top Performers</h3>
       <div className="space-y-3">
         {TOP_PERFORMERS.map(p => (
@@ -26,6 +26,6 @@ export default function TopPerformers() {
           </div>
         ))}
       </div>
-    </div>
+    </Card>
   );
 }

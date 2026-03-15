@@ -1,5 +1,6 @@
 import { RefreshCw, Download } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
+import { Button } from '@/components/ui/button';
 import OverviewStats from '../components/dashboard/OverviewStats';
 import QuickMetrics from '../components/dashboard/QuickMetrics';
 import EITrendChart from '../components/dashboard/EITrendChart';
@@ -28,12 +29,12 @@ export default function Dashboard() {
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
           <span className="hidden sm:inline text-xs text-gray-400">Last synced: just now</span>
-          <button className="btn-secondary flex items-center gap-1.5 text-sm px-3 py-1.5">
+          <Button variant="secondary" size="sm">
             <RefreshCw size={14} /> Refresh
-          </button>
-          <button className="btn-primary flex items-center gap-1.5 text-sm px-3 py-1.5">
+          </Button>
+          <Button size="sm">
             <Download size={14} /> Export
-          </button>
+          </Button>
         </div>
       </div>
 

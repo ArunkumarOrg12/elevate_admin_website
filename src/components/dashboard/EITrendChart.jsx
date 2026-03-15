@@ -1,5 +1,6 @@
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { EI_TREND_DATA } from '../../data/mockData';
+import { Card } from '@/components/ui/card';
 
 const LINES = [
   { key: 'CSE', color: '#3B82F6' },
@@ -11,7 +12,7 @@ const LINES = [
 
 export default function EITrendChart() {
   return (
-    <div className="card p-5 h-full">
+    <Card className="p-5 h-full">
       <div className="flex items-center justify-between mb-4">
         <div>
           <h3 className="font-semibold text-gray-900">Employability Index Trend</h3>
@@ -35,6 +36,6 @@ export default function EITrendChart() {
           ))}
         </LineChart>
       </ResponsiveContainer>
-    </div>
+    </Card>
   );
 }

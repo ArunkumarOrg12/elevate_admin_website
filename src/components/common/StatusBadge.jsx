@@ -1,4 +1,10 @@
+import { Badge } from '@/components/ui/badge';
+
 export default function StatusBadge({ status }) {
-  const cls = status === 'Ready' ? 'badge-ready' : status === 'Developing' ? 'badge-developing' : 'badge-at-risk';
-  return <span className={cls}>{status}</span>;
+  const variantMap = {
+    'Ready': 'ready',
+    'Developing': 'developing',
+    'At Risk': 'at-risk',
+  };
+  return <Badge variant={variantMap[status] || 'secondary'}>{status}</Badge>;
 }

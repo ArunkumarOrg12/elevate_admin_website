@@ -1,9 +1,10 @@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { PLACEMENT_PROGRESS } from '../../data/mockData';
+import { Card } from '@/components/ui/card';
 
 export default function PlacementProgress() {
   return (
-    <div className="card p-5 h-full">
+    <Card className="p-5 h-full">
       <h3 className="font-semibold text-gray-900 mb-1">Placement Progress</h3>
       <p className="text-xs text-gray-500 mb-4">Monthly offers vs target</p>
       <ResponsiveContainer width="100%" height={220}>
@@ -17,6 +18,6 @@ export default function PlacementProgress() {
           <Bar dataKey="target" name="Target" fill="#E2E8F0" radius={[3, 3, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
-    </div>
+    </Card>
   );
 }

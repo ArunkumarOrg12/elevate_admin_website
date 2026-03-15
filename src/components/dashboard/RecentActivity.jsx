@@ -1,5 +1,6 @@
 import { CheckCircle, AlertTriangle, ClipboardList, TrendingUp } from 'lucide-react';
 import { RECENT_ACTIVITY } from '../../data/mockData';
+import { Card } from '@/components/ui/card';
 
 const ICON_MAP = {
   check: { Icon: CheckCircle, color: 'text-emerald-500', bg: 'bg-emerald-50' },
@@ -10,7 +11,7 @@ const ICON_MAP = {
 
 export default function RecentActivity() {
   return (
-    <div className="card p-5">
+    <Card className="p-5">
       <h3 className="font-semibold text-gray-900 mb-4">Recent Activity</h3>
       <div className="space-y-3">
         {RECENT_ACTIVITY.map(a => {
@@ -28,6 +29,6 @@ export default function RecentActivity() {
           );
         })}
       </div>
-    </div>
+    </Card>
   );
 }

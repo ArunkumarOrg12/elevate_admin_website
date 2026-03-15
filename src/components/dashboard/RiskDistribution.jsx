@@ -1,5 +1,6 @@
-import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { RISK_DISTRIBUTION } from '../../data/mockData';
+import { Card } from '@/components/ui/card';
 
 const DATA = [
   { name: 'Ready ≥70', value: RISK_DISTRIBUTION.ready.count, color: '#10B981', pct: RISK_DISTRIBUTION.ready.percent },
@@ -9,7 +10,7 @@ const DATA = [
 
 export default function RiskDistribution() {
   return (
-    <div className="card p-5 h-full">
+    <Card className="p-5 h-full">
       <h3 className="font-semibold text-gray-900 mb-1">Risk Distribution</h3>
       <p className="text-xs text-gray-500 mb-3">Ready / Developing / At Risk</p>
       <ResponsiveContainer width="100%" height={200}>
@@ -35,6 +36,6 @@ export default function RiskDistribution() {
           </div>
         ))}
       </div>
-    </div>
+    </Card>
   );
 }

@@ -1,4 +1,5 @@
 import { QUICK_METRICS } from '../../data/mockData';
+import { Card } from '@/components/ui/card';
 
 const METRICS = [
   { key: 'campusReady', label: 'Campus Ready', color: 'emerald', suffix: '' },
@@ -22,11 +23,11 @@ export default function QuickMetrics() {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3">
       {METRICS.map((m, i) => (
-        <div key={m.key} className={`card p-4 text-center border ${colorMap[m.color]} page-enter`}
+        <Card key={m.key} className={`p-4 text-center border ${colorMap[m.color]} page-enter`}
           style={{ animationDelay: `${i * 80}ms` }}>
           <p className="stat-number text-xl">{QUICK_METRICS[m.key]}{m.suffix}</p>
           <p className="text-xs font-medium mt-1">{m.label}</p>
-        </div>
+        </Card>
       ))}
     </div>
   );

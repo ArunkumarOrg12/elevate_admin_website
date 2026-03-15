@@ -1,3 +1,5 @@
+import { Card, CardContent } from '@/components/ui/card';
+
 export default function StatCard({ label, value, description, trend, trendPositive, icon: Icon, accentColor = 'indigo' }) {
   const accentMap = {
     blue: 'border-blue-500 bg-blue-50 text-blue-600',
@@ -10,11 +12,11 @@ export default function StatCard({ label, value, description, trend, trendPositi
   const [borderColor, iconBg, iconColor] = accentMap[accentColor]?.split(' ') || accentMap.indigo.split(' ');
 
   return (
-    <div className={`card p-5 hover-lift border-l-4 ${borderColor}`}>
+    <Card className={`p-5 hover-lift border-l-4 ${borderColor}`}>
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <p className="table-header text-xs mb-1">{label}</p>
-          <p className={`stat-number text-2xl md:text-3xl mt-1`}>{value}</p>
+          <p className="stat-number text-2xl md:text-3xl mt-1">{value}</p>
           {description && <p className="text-gray-500 text-xs mt-1">{description}</p>}
           {trend && (
             <p className={`text-xs mt-2 font-medium ${trendPositive ? 'text-emerald-600' : 'text-red-600'}`}>
@@ -28,6 +30,6 @@ export default function StatCard({ label, value, description, trend, trendPositi
           </div>
         )}
       </div>
-    </div>
+    </Card>
   );
 }
