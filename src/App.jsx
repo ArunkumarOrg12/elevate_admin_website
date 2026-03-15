@@ -1,0 +1,39 @@
+import { Routes, Route, Navigate } from 'react-router-dom';
+import AppShell from './components/layout/AppShell';
+import RoleGuard from './components/common/RoleGuard';
+import { ROLES } from './constants/roles';
+import SignIn from './pages/SignIn';
+import Dashboard from './pages/Dashboard';
+import Students from './pages/Students';
+import Assessments from './pages/Assessments';
+import Departments from './pages/Departments';
+import Analytics from './pages/Analytics';
+import RiskMonitor from './pages/RiskMonitor';
+import Reports from './pages/Reports';
+import Settings from './pages/Settings';
+import CollegeManagement from './pages/CollegeManagement';
+
+export default function App() {
+  return (
+    <Routes>
+      <Route path="/sign-in" element={<SignIn />} />
+      <Route element={<AppShell />}>
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/students" element={<Students />} />
+        <Route path="/assessments" element={<Assessments />} />
+        <Route path="/departments" element={<Departments />} />
+        <Route path="/analytics" element={<Analytics />} />
+        <Route path="/risk-monitor" element={<RiskMonitor />} />
+        <Route path="/reports" element={<Reports />} />
+        <Route path="/settings" element={<Settings />} />
+        <Route path="/college-management" element={
+          <RoleGuard allowedRoles={[ROLES.SUPER_ADMIN]} fallback={<Navigate to="/dashboard" replace />}>
+            <CollegeManagement />
+          </RoleGuard>
+        } />
+      </Route>
+      <Route path="*" element={<Navigate to="/dashboard" replace />} />
+    </Routes>
+  );
+}

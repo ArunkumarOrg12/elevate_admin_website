@@ -1,0 +1,90 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background-color: #F8FAFC;
+    color: #1E293B;
+  }
+}
+
+@layer components {
+  .card {
+    @apply bg-white rounded-[14px] shadow-card border border-gray-100;
+  }
+  .btn-primary {
+    @apply bg-indigo-600 text-white rounded-[9px] px-4 py-2 font-medium hover:bg-indigo-700 transition-colors;
+  }
+  .btn-secondary {
+    @apply bg-white text-gray-700 rounded-[9px] px-4 py-2 font-medium border border-gray-200 hover:bg-gray-50 transition-colors;
+  }
+  .btn-danger {
+    @apply bg-red-500 text-white rounded-[9px] px-4 py-2 font-medium hover:bg-red-600 transition-colors;
+  }
+  .badge-ready {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200;
+  }
+  .badge-developing {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200;
+  }
+  .badge-at-risk {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-50 text-red-700 border border-red-200;
+  }
+  .badge-completed {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200;
+  }
+  .badge-scheduled {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200;
+  }
+  .badge-pdf {
+    @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-50 text-red-600;
+  }
+  .badge-excel {
+    @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-50 text-green-600;
+  }
+  .stat-number {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    @apply font-bold tracking-tight;
+  }
+  .table-header {
+    @apply uppercase tracking-wide text-xs text-gray-500 font-semibold;
+  }
+  .hover-lift {
+    @apply transition-all duration-200 hover:-translate-y-0.5 hover:shadow-card-hover;
+  }
+  .progress-fill {
+    height: 100%;
+    width: var(--target-width, 0%);
+    transition: width 1s ease-out;
+    border-radius: inherit;
+  }
+}
+
+@layer utilities {
+  .animate-delay-100 { animation-delay: 100ms; }
+  .animate-delay-200 { animation-delay: 200ms; }
+  .animate-delay-300 { animation-delay: 300ms; }
+  .animate-delay-400 { animation-delay: 400ms; }
+  .animate-delay-500 { animation-delay: 500ms; }
+}
+
+@keyframes pageEnter {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.page-enter {
+  animation: pageEnter 0.35s ease-out both;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease-out both;
+}
