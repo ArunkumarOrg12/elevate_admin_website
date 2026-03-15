@@ -1,54 +1,243 @@
 import { useState } from 'react';
-import { Download, Plus, ClipboardList, CheckCircle, Clock, Users, Calendar } from 'lucide-react';
+import { format } from 'date-fns';
+import {
+  Download, Plus, ClipboardList, CheckCircle, Clock, Users, Calendar,
+  CalendarCheck, BookOpen, ChevronRight,
+} from 'lucide-react';
 import StatCard from '../components/common/StatCard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
   Table, TableHeader, TableBody, TableHead, TableRow, TableCell,
 } from '@/components/ui/table';
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+} from '@/components/ui/dialog';
+import {
+  Select, SelectTrigger, SelectValue, SelectContent, SelectItem,
+} from '@/components/ui/select';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { ASSESSMENT_CYCLES } from '../data/mockData';
 import { formatDate } from '../utils/helpers';
 
-function ScheduleModal({ onClose }) {
+const DEPARTMENTS = ['CSE', 'ECE', 'MECH', 'CIVIL', 'IT', 'EEE', 'MBA', 'MCA'];
+
+const ASSESSMENT_TYPES = [
+  { value: 'Comprehensive', label: 'Comprehensive' },
+  { value: 'Aptitude + Verbal', label: 'Aptitude + Verbal' },
+  { value: 'Technical', label: 'Technical' },
+  { value: 'Full Stack', label: 'Full Stack' },
+];
+
+const EMPTY_FORM = {
+  name: '',
+  date: null,   // Date object | null
+  type: '',
+  departments: [],
+};
+
+function ScheduleAssessmentDialog({ open, onOpenChange }) {
+  const [form, setForm] = useState(EMPTY_FORM);
+  const [errors, setErrors] = useState({});
+  const [calOpen, setCalOpen] = useState(false);
+
+  function toggleDept(dept) {
+    setForm(prev => ({
+      ...prev,
+      departments: prev.departments.includes(dept)
+        ? prev.departments.filter(d => d !== dept)
+        : [...prev.departments, dept],
+    }));
+    if (errors.departments) setErrors(prev => ({ ...prev, departments: '' }));
+  }
+
+  function validate() {
+    const newErrors = {};
+    if (!form.name.trim()) newErrors.name = 'Assessment name is required';
+    if (!form.date) newErrors.date = 'Please pick a date';
+    if (!form.type) newErrors.type = 'Please select a type';
+    if (form.departments.length === 0) newErrors.departments = 'Select at least one department';
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  }
+
+  function handleSchedule() {
+    if (!validate()) return;
+    // TODO: submit form.name, form.date, form.type, form.departments to API
+    console.log('Scheduling assessment:', form);
+    setForm(EMPTY_FORM);
+    setErrors({});
+    onOpenChange(false);
+  }
+
+  function handleClose() {
+    setForm(EMPTY_FORM);
+    setErrors({});
+    setCalOpen(false);
+    onOpenChange(false);
+  }
+
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-      <Card className="w-full max-w-md p-6 fade-in">
-        <h3 className="font-bold text-gray-900 text-lg mb-4">Schedule Assessment</h3>
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Assessment Name</label>
-            <Input placeholder="e.g. Campus Readiness Evaluation" />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
-              <Input type="date" />
+    <Dialog open={open} onOpenChange={handleClose}>
+      <DialogContent className="max-w-[480px] w-full">
+        {/* Header */}
+        <DialogHeader>
+          <div className="flex items-center gap-3">
+            <div className="h-9 w-9 rounded-[10px] bg-indigo-50 flex items-center justify-center flex-shrink-0">
+              <CalendarCheck className="h-4.5 w-4.5 text-indigo-600" size={18} />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
-              <select className="w-full border border-gray-200 rounded-[9px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white">
-                <option>Comprehensive</option>
-                <option>Aptitude + Verbal</option>
-                <option>Technical</option>
-                <option>Full Stack</option>
-              </select>
+              <DialogTitle>Schedule Assessment</DialogTitle>
+              <DialogDescription>Create a new assessment cycle for Batch 2025</DialogDescription>
             </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Departments</label>
-            <select multiple className="w-full border border-gray-200 rounded-[9px] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 h-24">
-              {['CSE', 'ECE', 'MECH', 'CIVIL', 'IT', 'EEE', 'MBA', 'MCA'].map(d => <option key={d}>{d}</option>)}
-            </select>
+        </DialogHeader>
+
+        {/* Body */}
+        <div className="px-6 py-5 space-y-5">
+          {/* Assessment Name */}
+          <div className="space-y-1.5">
+            <Label htmlFor="assess-name">Assessment Name</Label>
+            <Input
+              id="assess-name"
+              placeholder="e.g. Campus Readiness Evaluation"
+              value={form.name}
+              onChange={e => {
+                setForm(prev => ({ ...prev, name: e.target.value }));
+                if (errors.name) setErrors(prev => ({ ...prev, name: '' }));
+              }}
+              className={errors.name ? 'border-red-400 focus:ring-red-400' : ''}
+            />
+            {errors.name && <p className="text-xs text-red-500 mt-0.5">{errors.name}</p>}
+          </div>
+
+          {/* Date + Type row */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label>Date</Label>
+              <Popover open={calOpen} onOpenChange={setCalOpen}>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    className={[
+                      'flex h-9 w-full items-center gap-2 rounded-[9px] border bg-white px-3 py-1.5 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent',
+                      form.date ? 'text-gray-900' : 'text-gray-400',
+                      errors.date ? 'border-red-400' : 'border-gray-200 hover:border-indigo-300',
+                    ].join(' ')}
+                  >
+                    <Calendar size={14} className={form.date ? 'text-indigo-500' : 'text-gray-400'} />
+                    {form.date ? format(form.date, 'dd MMM yyyy') : 'Pick a date'}
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent align="start" className="w-auto p-0">
+                  <CalendarComponent
+                    mode="single"
+                    selected={form.date}
+                    onSelect={date => {
+                      setForm(prev => ({ ...prev, date: date ?? null }));
+                      if (errors.date) setErrors(prev => ({ ...prev, date: '' }));
+                      setCalOpen(false);
+                    }}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+              {errors.date && <p className="text-xs text-red-500 mt-0.5">{errors.date}</p>}
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>Type</Label>
+              <Select
+                value={form.type}
+                onValueChange={val => {
+                  setForm(prev => ({ ...prev, type: val }));
+                  if (errors.type) setErrors(prev => ({ ...prev, type: '' }));
+                }}
+              >
+                <SelectTrigger className={errors.type ? 'border-red-400 focus:ring-red-400' : ''}>
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {ASSESSMENT_TYPES.map(t => (
+                    <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.type && <p className="text-xs text-red-500 mt-0.5">{errors.type}</p>}
+            </div>
+          </div>
+
+          {/* Departments */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Label>Departments</Label>
+              {form.departments.length > 0 && (
+                <span className="text-xs text-indigo-600 font-medium">
+                  {form.departments.length} selected
+                </span>
+              )}
+            </div>
+            <div className="grid grid-cols-4 gap-2">
+              {DEPARTMENTS.map(dept => {
+                const selected = form.departments.includes(dept);
+                return (
+                  <button
+                    key={dept}
+                    type="button"
+                    onClick={() => toggleDept(dept)}
+                    className={`
+                      relative h-9 rounded-[9px] text-sm font-medium border transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1
+                      ${selected
+                        ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
+                        : 'bg-white text-gray-700 border-gray-200 hover:border-indigo-300 hover:bg-indigo-50/50'
+                      }
+                    `}
+                  >
+                    {dept}
+                  </button>
+                );
+              })}
+            </div>
+            {errors.departments && (
+              <p className="text-xs text-red-500">{errors.departments}</p>
+            )}
+            {form.departments.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                {form.departments.map(d => (
+                  <span
+                    key={d}
+                    className="inline-flex items-center gap-1 text-xs bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full font-medium"
+                  >
+                    {d}
+                    <button
+                      type="button"
+                      onClick={() => toggleDept(d)}
+                      className="hover:text-indigo-900 transition-colors leading-none"
+                      aria-label={`Remove ${d}`}
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
         </div>
-        <div className="flex justify-end gap-2 mt-5">
-          <Button variant="secondary" onClick={onClose}>Cancel</Button>
-          <Button onClick={onClose}>Schedule</Button>
-        </div>
-      </Card>
-    </div>
+
+        {/* Footer */}
+        <DialogFooter>
+          <Button variant="secondary" onClick={handleClose}>Cancel</Button>
+          <Button onClick={handleSchedule}>
+            <CalendarCheck size={14} />
+            Schedule Assessment
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -60,7 +249,8 @@ const TYPE_COLORS = {
 };
 
 export default function Assessments() {
-  const [showModal, setShowModal] = useState(false);
+  const [showDialog, setShowDialog] = useState(false);
+
   const stats = {
     total: ASSESSMENT_CYCLES.length,
     completed: ASSESSMENT_CYCLES.filter(a => a.status === 'Completed').length,
@@ -70,16 +260,22 @@ export default function Assessments() {
 
   return (
     <div className="page-enter space-y-5">
-      {showModal && <ScheduleModal onClose={() => setShowModal(false)} />}
+      <ScheduleAssessmentDialog open={showDialog} onOpenChange={setShowDialog} />
+
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
         <div>
-          <h1 className="text-xl md:text-2xl font-bold text-gray-900" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
+          <h1
+            className="text-xl md:text-2xl font-bold text-gray-900"
+            style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}
+          >
             Assessment Management
           </h1>
-          <p className="text-gray-500 text-sm mt-0.5">{stats.total} cycles · Batch 2025 · AY 2024-25</p>
+          <p className="text-gray-500 text-sm mt-0.5">
+            {stats.total} cycles · Batch 2025 · AY 2024-25
+          </p>
         </div>
         <div className="flex gap-2 flex-shrink-0">
-          <Button size="sm" onClick={() => setShowModal(true)}>
+          <Button size="sm" onClick={() => setShowDialog(true)}>
             <Plus size={14} /> Schedule Assessment
           </Button>
           <Button variant="secondary" size="sm">
