@@ -131,12 +131,12 @@ export default function Sidebar() {
             )}
           </button>
 
-          {showLabels && (
+          {/* {showLabels && (
             <div className="mt-2 px-3 pb-1 flex items-center gap-1.5 text-gray-500 text-xs">
               <Zap size={12} />
               <span>EI Portal v2.4.1 · AY 2024-25</span>
             </div>
-          )}
+          )} */}
         </div>
       </div>
     </>

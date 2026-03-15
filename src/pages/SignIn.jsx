@@ -213,19 +213,19 @@ export default function SignIn() {
           </form>
 
           {/* SSO divider */}
-          <div className="flex items-center gap-3 my-5">
+          {/* <div className="flex items-center gap-3 my-5">
             <div className="flex-1 h-px bg-gray-200" />
             <span className="text-xs text-gray-400">or continue with</span>
             <div className="flex-1 h-px bg-gray-200" />
-          </div>
+          </div> */}
 
-          <div className="flex gap-3">
+          {/* <div className="flex gap-3">
             {['Google', 'Microsoft'].map(provider => (
               <button key={provider} className="flex-1 btn-secondary py-2 text-sm flex items-center justify-center gap-2">
                 {provider}
               </button>
             ))}
-          </div>
+          </div> */}
 
           {/* Demo hint */}
           <div className="mt-6 p-3 bg-indigo-50 rounded-[9px] text-xs text-indigo-700 text-center">
