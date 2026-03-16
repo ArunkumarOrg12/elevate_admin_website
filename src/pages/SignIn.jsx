@@ -27,10 +27,10 @@ export default function SignIn() {
     setError('');
     setLoading(true);
     try {
-      await login(email || 'demo@elevate.com', password || 'demo', role);
+      await login(email, password, role);
       navigate('/dashboard', { replace: true });
     } catch (err) {
-      setError('Invalid credentials. Please try again.');
+      setError(err?.response?.data?.message || 'Invalid credentials. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -194,9 +194,6 @@ export default function SignIn() {
             </Button>
           </form>
 
-          <div className="mt-6 p-3 bg-indigo-50 rounded-[9px] text-xs text-indigo-700 text-center">
-            Demo: Click <strong>Sign In</strong> with any credentials to enter as {role === ROLES.SUPER_ADMIN ? 'Super Admin' : 'College Admin'}
-          </div>
         </div>
       </div>
     </div>
