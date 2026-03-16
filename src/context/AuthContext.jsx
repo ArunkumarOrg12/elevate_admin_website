@@ -1,5 +1,6 @@
 import { createContext, useState, useCallback, useEffect } from 'react';
-import { setAccessToken } from '../services/api';
+import { useNavigate } from 'react-router-dom';
+import { setAccessToken, setAuthFailureHandler } from '../services/api';
 import { authApi } from '../controllers';
 
 export const AuthContext = createContext(null);
@@ -7,6 +8,17 @@ export const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
+
+  // Register the failure handler so the interceptor can clear React state
+  // and navigate via React Router instead of doing a hard window.location redirect.
+  useEffect(() => {
+    setAuthFailureHandler(() => {
+      setAccessToken(null);
+      setUser(null);
+      navigate('/sign-in', { replace: true });
+    });
+  }, [navigate]);
 
   // On mount: silently restore session via httpOnly refresh-token cookie.
   // If the cookie is missing or expired the call rejects and the user stays
