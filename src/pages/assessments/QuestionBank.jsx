@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { LibraryBig, Globe, EyeOff, BarChart2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import StatCard from '../../components/common/StatCard';
 import {
   Table, TableHeader, TableBody, TableHead, TableRow, TableCell,
@@ -9,7 +9,7 @@ import {
 import {
   Select, SelectTrigger, SelectValue, SelectContent, SelectItem,
 } from '@/components/ui/select';
-import { useQuestionBank, useQuestionBankStats, usePublishBankQuestion, useUnpublishBankQuestion } from '../../controllers/questionsController';
+import { useQuestionBank, usePublishBankQuestion, useUnpublishBankQuestion } from '../../controllers/questionsController';
 
 const DIFFICULTY_COLORS = {
   easy: 'bg-emerald-50 text-emerald-700',
@@ -20,19 +20,29 @@ const DIFFICULTY_COLORS = {
 export default function QuestionBank() {
   const [filter, setFilter] = useState('all');
 
-  const bankParams = filter === 'published'
-    ? { is_published: true }
-    : filter === 'unpublished'
-      ? { is_published: false }
-      : undefined;
-
-  const { data, isLoading, isError } = useQuestionBank(bankParams);
-  const { data: statsData } = useQuestionBankStats();
+  // Always fetch all, filter client-side
+  const { data, isLoading, isError } = useQuestionBank();
   const publishMutation = usePublishBankQuestion();
   const unpublishMutation = useUnpublishBankQuestion();
 
-  const questions = data?.questions ?? [];
-  const stats = statsData?.data ?? {};
+  const allQuestions = data?.questions ?? [];
+
+  // Client-side filter
+  const questions = filter === 'published'
+    ? allQuestions.filter(q => q.is_published === true)
+    : filter === 'unpublished'
+      ? allQuestions.filter(q => q.is_published !== true)
+      : allQuestions;
+
+  // Compute stats from fetched data
+  const stats = {
+    total: allQuestions.length,
+    published: allQuestions.filter(q => q.is_published === true).length,
+    unpublished: allQuestions.filter(q => q.is_published !== true).length,
+    hard: allQuestions.filter(q => q.difficulty === 'hard').length,
+  };
+
+  const isPending = publishMutation.isPending || unpublishMutation.isPending;
 
   return (
     <div className="page-enter space-y-5">
@@ -45,12 +55,12 @@ export default function QuestionBank() {
       </div>
 
       {/* Stats */}
-      {statsData && (
+      {!isLoading && (
         <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
-          <StatCard label="TOTAL" value={stats.total ?? '—'} icon={LibraryBig} accentColor="indigo" />
-          <StatCard label="PUBLISHED" value={stats.published ?? '—'} icon={Globe} accentColor="emerald" />
-          <StatCard label="UNPUBLISHED" value={stats.unpublished ?? '—'} icon={EyeOff} accentColor="amber" />
-          <StatCard label="BY DIFFICULTY" value={`${stats.hard ?? '—'} `} icon={BarChart2} accentColor="red" />
+          <StatCard label="TOTAL" value={stats.total} icon={LibraryBig} accentColor="indigo" />
+          <StatCard label="PUBLISHED" value={stats.published} icon={Globe} accentColor="emerald" />
+          <StatCard label="UNPUBLISHED" value={stats.unpublished} icon={EyeOff} accentColor="amber" />
+          <StatCard label="HARD" value={stats.hard} icon={BarChart2} accentColor="red" />
         </div>
       )}
 
@@ -90,7 +100,7 @@ export default function QuestionBank() {
           <Table>
             <TableHeader>
               <TableRow>
-                {['#', 'QUESTION', 'TYPE', 'DIFFICULTY', 'MARKS', 'STATUS', 'ACTION'].map(h => (
+                {['#', 'QUESTION', 'CATEGORY', 'DIFFICULTY', 'SCORE', 'PAPER SET', 'STATUS', 'ACTION'].map(h => (
                   <TableHead key={h}>{h}</TableHead>
                 ))}
               </TableRow>
@@ -99,8 +109,6 @@ export default function QuestionBank() {
               {questions.map((q, idx) => {
                 const qId = q.id || q._id;
                 const isPublished = q.is_published === true;
-                const isPending = publishMutation.isPending || unpublishMutation.isPending;
-
                 return (
                   <TableRow key={qId}>
                     <TableCell className="text-gray-400 text-xs w-10">{idx + 1}</TableCell>
@@ -108,7 +116,16 @@ export default function QuestionBank() {
                       <span className="text-sm text-gray-800 line-clamp-2">{q.question_text}</span>
                     </TableCell>
                     <TableCell>
-                      <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full uppercase">{q.sub_category || q.category || 'MCQ'}</span>
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full capitalize w-fit">
+                          {q.category?.replace(/_/g, ' ') || '—'}
+                        </span>
+                        {q.sub_category && (
+                          <span className="text-xs text-gray-400 capitalize">
+                            {q.sub_category.replace(/_/g, ' ')}
+                          </span>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell>
                       <span className={`text-xs px-2 py-0.5 rounded-full font-medium capitalize ${DIFFICULTY_COLORS[q.difficulty] || 'bg-gray-100 text-gray-600'}`}>
@@ -116,6 +133,11 @@ export default function QuestionBank() {
                       </span>
                     </TableCell>
                     <TableCell className="text-sm text-gray-700">{q.base_score ?? '—'}</TableCell>
+                    <TableCell>
+                      <span className="text-xs bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full uppercase">
+                        {q.paper_set || '—'}
+                      </span>
+                    </TableCell>
                     <TableCell>
                       <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
                         isPublished ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-100 text-gray-500'

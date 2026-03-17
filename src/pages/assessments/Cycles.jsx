@@ -41,14 +41,19 @@ const STATUS_COLORS = {
 
 function CreateCycleDialog({ open, onOpenChange }) {
   const createMutation = useCreateCycle();
-  const [form, setForm] = useState({ name: '', startDate: null, endDate: null, description: '' });
+  const [form, setForm] = useState({ title: '', batch: '', start_date: null, end_date: null });
   const [calOpen, setCalOpen] = useState({ start: false, end: false });
 
   const handleCreate = () => {
-    if (!form.name.trim()) return;
+    if (!form.title.trim()) return;
     createMutation.mutate(
-      { name: form.name, startDate: form.startDate, endDate: form.endDate, description: form.description },
-      { onSuccess: () => { setForm({ name: '', startDate: null, endDate: null, description: '' }); onOpenChange(false); } }
+      {
+        title: form.title,
+        batch: form.batch || undefined,
+        start_date: form.start_date,
+        end_date: form.end_date,
+      },
+      { onSuccess: () => { setForm({ title: '', batch: '', start_date: null, end_date: null }); onOpenChange(false); } }
     );
   };
 
@@ -61,11 +66,19 @@ function CreateCycleDialog({ open, onOpenChange }) {
         </DialogHeader>
         <div className="px-6 py-4 space-y-4">
           <div className="space-y-1.5">
-            <Label>Cycle Name <span className="text-red-500">*</span></Label>
+            <Label>Cycle Title <span className="text-red-500">*</span></Label>
             <Input
-              placeholder="e.g. Campus Readiness Q1 2025"
-              value={form.name}
-              onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
+              placeholder="e.g. Unit Test - April"
+              value={form.title}
+              onChange={e => setForm(p => ({ ...p, title: e.target.value }))}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Batch</Label>
+            <Input
+              placeholder="e.g. 2023-2027"
+              value={form.batch}
+              onChange={e => setForm(p => ({ ...p, batch: e.target.value }))}
             />
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -74,16 +87,16 @@ function CreateCycleDialog({ open, onOpenChange }) {
               <Label>Start Date</Label>
               <Popover open={calOpen.start} onOpenChange={v => setCalOpen(p => ({ ...p, start: v }))}>
                 <PopoverTrigger asChild>
-                  <button className={`flex h-9 w-full items-center gap-2 rounded-[9px] border border-gray-200 bg-white px-3 py-1.5 text-sm ${form.startDate ? 'text-gray-900' : 'text-gray-400'}`}>
+                  <button className={`flex h-9 w-full items-center gap-2 rounded-[9px] border border-gray-200 bg-white px-3 py-1.5 text-sm ${form.start_date ? 'text-gray-900' : 'text-gray-400'}`}>
                     <Calendar size={14} className="text-gray-400" />
-                    {form.startDate ? format(form.startDate, 'dd MMM yyyy') : 'Pick date'}
+                    {form.start_date ? format(form.start_date, 'dd MMM yyyy') : 'Pick date'}
                   </button>
                 </PopoverTrigger>
                 <PopoverContent align="start" className="w-auto p-0">
                   <CalendarComponent
                     mode="single"
-                    selected={form.startDate}
-                    onSelect={d => { setForm(p => ({ ...p, startDate: d ?? null })); setCalOpen(p => ({ ...p, start: false })); }}
+                    selected={form.start_date}
+                    onSelect={d => { setForm(p => ({ ...p, start_date: d ?? null })); setCalOpen(p => ({ ...p, start: false })); }}
                     initialFocus
                   />
                 </PopoverContent>
@@ -94,34 +107,26 @@ function CreateCycleDialog({ open, onOpenChange }) {
               <Label>End Date</Label>
               <Popover open={calOpen.end} onOpenChange={v => setCalOpen(p => ({ ...p, end: v }))}>
                 <PopoverTrigger asChild>
-                  <button className={`flex h-9 w-full items-center gap-2 rounded-[9px] border border-gray-200 bg-white px-3 py-1.5 text-sm ${form.endDate ? 'text-gray-900' : 'text-gray-400'}`}>
+                  <button className={`flex h-9 w-full items-center gap-2 rounded-[9px] border border-gray-200 bg-white px-3 py-1.5 text-sm ${form.end_date ? 'text-gray-900' : 'text-gray-400'}`}>
                     <Calendar size={14} className="text-gray-400" />
-                    {form.endDate ? format(form.endDate, 'dd MMM yyyy') : 'Pick date'}
+                    {form.end_date ? format(form.end_date, 'dd MMM yyyy') : 'Pick date'}
                   </button>
                 </PopoverTrigger>
                 <PopoverContent align="start" className="w-auto p-0">
                   <CalendarComponent
                     mode="single"
-                    selected={form.endDate}
-                    onSelect={d => { setForm(p => ({ ...p, endDate: d ?? null })); setCalOpen(p => ({ ...p, end: false })); }}
+                    selected={form.end_date}
+                    onSelect={d => { setForm(p => ({ ...p, end_date: d ?? null })); setCalOpen(p => ({ ...p, end: false })); }}
                     initialFocus
                   />
                 </PopoverContent>
               </Popover>
             </div>
           </div>
-          <div className="space-y-1.5">
-            <Label>Description</Label>
-            <Input
-              placeholder="Optional description..."
-              value={form.description}
-              onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
-            />
-          </div>
         </div>
         <DialogFooter>
           <Button variant="secondary" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button onClick={handleCreate} disabled={createMutation.isPending || !form.name.trim()}>
+          <Button onClick={handleCreate} disabled={createMutation.isPending || !form.title.trim()}>
             {createMutation.isPending ? <><Loader2 size={14} className="animate-spin" /> Creating...</> : 'Create Cycle'}
           </Button>
         </DialogFooter>
@@ -205,7 +210,7 @@ export default function Cycles() {
   const { data, isLoading, isError } = useCycles();
   const changeStatusMutation = useChangeCycleStatus();
 
-  const cycles = data?.data ?? [];
+  const cycles = data?.cycles ?? [];
   const stats = {
     total: cycles.length,
     active: cycles.filter(c => c.status === 'active').length,
@@ -279,22 +284,22 @@ export default function Cycles() {
                 return (
                   <TableRow key={cId}>
                     <TableCell>
-                      <div className="text-sm font-medium text-gray-900">{cycle.name}</div>
-                      {cycle.description && <div className="text-xs text-gray-400 mt-0.5">{cycle.description}</div>}
+                      <div className="text-sm font-medium text-gray-900">{cycle.title}</div>
+                      {cycle.batch && <div className="text-xs text-gray-400 mt-0.5">Batch: {cycle.batch}</div>}
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1.5 text-sm text-gray-600">
                         <Calendar size={13} className="text-gray-400" />
                         <span>
-                          {cycle.startDate ? format(new Date(cycle.startDate), 'dd MMM yyyy') : '—'}
-                          {cycle.endDate ? ` → ${format(new Date(cycle.endDate), 'dd MMM yyyy')}` : ''}
+                          {cycle.start_date ? format(new Date(cycle.start_date), 'dd MMM yyyy') : '—'}
+                          {cycle.end_date ? ` → ${format(new Date(cycle.end_date), 'dd MMM yyyy')}` : ''}
                         </span>
                       </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1 text-sm text-gray-600">
                         <Users size={13} className="text-gray-400" />
-                        {cycle.participantCount ?? cycle.participants ?? '—'}
+                        {cycle.participantCount ?? '—'}
                       </div>
                     </TableCell>
                     <TableCell>
@@ -324,7 +329,7 @@ export default function Cycles() {
                           variant="ghost"
                           size="sm"
                           className="h-7 text-xs text-indigo-600 hover:text-indigo-700 px-2"
-                          onClick={() => setResultsDialog({ id: cId, name: cycle.name })}
+                          onClick={() => setResultsDialog({ id: cId, name: cycle.title })}
                         >
                           <Trophy size={13} /> Results
                         </Button>
