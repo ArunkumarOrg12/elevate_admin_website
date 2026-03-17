@@ -1,65 +1,88 @@
 import { createContext, useState, useCallback, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { setAccessToken, setAuthFailureHandler } from '../services/api';
-import { authApi } from '../controllers';
+import axios from 'axios';
+import { setAuthToken } from '../services/api';
+import api from '../services/api';
+import { BASE_URL, AUTH_URLS } from '../constants/apiUrlConstant';
+import { ROLES } from '../constants/roles';
 
 export const AuthContext = createContext(null);
 
-export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const navigate = useNavigate();
+// Non-sensitive user info persisted across page reloads.
+// Actual tokens are NEVER stored here — they live in httpOnly cookies
+// (refreshToken) and an in-memory variable (accessToken).
+const USER_KEY = 'employiq_user';
 
-  // Register the failure handler so the interceptor can clear React state
-  // and navigate via React Router instead of doing a hard window.location redirect.
-  useEffect(() => {
-    setAuthFailureHandler(() => {
-      setAccessToken(null);
-      setUser(null);
-      navigate('/sign-in', { replace: true });
-    });
-  }, [navigate]);
-
-  // On mount: silently restore session via httpOnly refresh-token cookie.
-  // If the cookie is missing or expired the call rejects and the user stays
-  // unauthenticated — no localStorage reads needed.
-  useEffect(() => {
-    authApi.refreshToken()
-      .then(data => {
-        setAccessToken(data.accessToken);
-        setUser(data.user);
-      })
-      .catch(() => {
-        setAccessToken(null);
-        setUser(null);
-      })
-      .finally(() => setIsLoading(false));
-  }, []);
-
-  const login = useCallback(async (email, password, role) => {
-    const data = await authApi.login(email, password, role);
-    setAccessToken(data.accessToken);
-    setUser(data.user);
-    return data.user;
-  }, []);
-
-  const logout = useCallback(async () => {
-    try {
-      await authApi.logout();
-    } catch {
-      // swallow — always clear local state
-    }
-    setAccessToken(null);
-    setUser(null);
-  }, []);
-
-  const value = {
-    user,
-    isAuthenticated: !!user,
-    isLoading,
-    login,
-    logout,
-  };
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+function loadStoredUser() {
+  try {
+    const raw = localStorage.getItem(USER_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
 }
+
+export function AuthProvider({ children }) {
+  const [user, setUser] = useState(loadStoredUser);
+  // true while we attempt a silent session restore on first mount
+  const [loading, setLoading] = useState(true);
+
+  // ── Silent session restore ─────────────────────────────────────────────────
+  // On every cold load, try to exchange the httpOnly refreshToken cookie for a
+  // fresh accessToken. If it fails (cookie expired / missing), the user is
+  // considered logged-out.
+  useEffect(() => {
+    const tryRestore = async () => {
+      if (!loadStoredUser()) {
+        // No cached user — nothing to restore.
+        setLoading(false);
+        return;
+      }
+      try {
+        const { data } = await axios.post(
+          `${BASE_URL}${AUTH_URLS.REFRESH_TOKEN}`,
+          {},
+          { withCredentials: true },
+        );
+        setAuthToken(data.accessToken);
+      } catch {
+        // Refresh failed — session is truly expired.
+        setAuthToken(null);
+        setUser(null);
+        try { localStorage.removeItem(USER_KEY); } catch {}
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    tryRestore();
+  }, []);
+
+  // ── Login ──────────────────────────────────────────────────────────────────
+  // role: 'superadmin' | 'collegeadmin'
+  const login = useCallback(async (email, password, role = 'superadmin') => {
+    const loginUrl = role === ROLES.COLLEGE_ADMIN
+      ? AUTH_URLS.COLLEGEADMIN_LOGIN
+      : AUTH_URLS.SUPERADMIN_LOGIN;
+    // api.post goes through the interceptor → returns res.data directly
+    const res = await api.post(loginUrl, { email, password });
+    setAuthToken(res.accessToken);
+    setUser(res.user);
+    try { localStorage.setItem(USER_KEY, JSON.stringify(res.user)); } catch {}
+    return res;
+  }, []);
+
+  // ── Logout ─────────────────────────────────────────────────────────────────
+  const logout = useCallback(async () => {
+    try { await api.post(AUTH_URLS.LOGOUT); } catch {}
+    setAuthToken(null);
+    setUser(null);
+    try { localStorage.removeItem(USER_KEY); } catch {}
+  }, []);
+
+  return (
+    <AuthContext.Provider value={{ user, loading, isAuthenticated: !!user, login, logout }}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
