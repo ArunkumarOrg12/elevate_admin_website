@@ -164,7 +164,7 @@ export default function AddQuestion() {
     uploadOptionImagesMutation.isPending;
 
   return (
-    <div className="page-enter space-y-5 max-w-2xl">
+    <div className="page-enter space-y-4">
       {/* Header */}
       <div className="flex items-center gap-3">
         <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="p-1.5">
@@ -178,236 +178,242 @@ export default function AddQuestion() {
         </div>
       </div>
 
-      {/* Question Content */}
-      <Card>
-        <CardHeader className="px-5 py-4 border-b border-gray-100">
-          <CardTitle className="text-sm text-gray-600 font-medium uppercase tracking-wide">Question Content</CardTitle>
-        </CardHeader>
-        <CardContent className="px-5 py-5 space-y-4">
-          <div className="space-y-1.5">
-            <Label htmlFor="q-text">Question Text <span className="text-red-500">*</span></Label>
-            <textarea
-              id="q-text"
-              rows={3}
-              placeholder="Enter the question..."
-              value={form.question_text}
-              onChange={e => setField('question_text', e.target.value)}
-              className={`w-full rounded-[9px] border px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors ${errors.question_text ? 'border-red-400' : 'border-gray-200'}`}
-            />
-            {errors.question_text && <p className="text-xs text-red-500">{errors.question_text}</p>}
-          </div>
+      {/* 2-column on desktop */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-4 items-start">
 
-          <ImageUpload
-            label="Question Image (optional)"
-            file={questionImage}
-            onChange={setQuestionImage}
-          />
-        </CardContent>
-      </Card>
-
-      {/* Classification */}
-      <Card>
-        <CardHeader className="px-5 py-4 border-b border-gray-100">
-          <CardTitle className="text-sm text-gray-600 font-medium uppercase tracking-wide">Classification</CardTitle>
-        </CardHeader>
-        <CardContent className="px-5 py-5 space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            {/* Category */}
-            <div className="space-y-1.5">
-              <Label>Category <span className="text-red-500">*</span></Label>
-              <Select
-                value={form.category}
-                onValueChange={v => { setField('category', v); setField('sub_category', ''); }}
-              >
-                <SelectTrigger className={errors.category ? 'border-red-400' : ''}>
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {CATEGORIES.map(c => (
-                    <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {errors.category && <p className="text-xs text-red-500">{errors.category}</p>}
-            </div>
-
-            {/* Sub-category (conditional) */}
-            {needsSubCategory && subCategoryOptions.length > 0 && (
+        {/* LEFT: Question Content + Answer Options */}
+        <div className="space-y-4">
+          {/* Question Content */}
+          <Card>
+            <CardHeader className="px-4 sm:px-5 py-3.5 border-b border-gray-100">
+              <CardTitle className="text-sm text-gray-600 font-medium uppercase tracking-wide">Question Content</CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 sm:px-5 py-4 space-y-3">
               <div className="space-y-1.5">
-                <Label>Sub-Category <span className="text-red-500">*</span></Label>
-                <Select value={form.sub_category} onValueChange={v => setField('sub_category', v)}>
-                  <SelectTrigger className={errors.sub_category ? 'border-red-400' : ''}>
-                    <SelectValue placeholder="Select sub-category" />
+                <Label htmlFor="q-text">Question Text <span className="text-red-500">*</span></Label>
+                <textarea
+                  id="q-text"
+                  rows={4}
+                  placeholder="Enter the question..."
+                  value={form.question_text}
+                  onChange={e => setField('question_text', e.target.value)}
+                  className={`w-full rounded-[9px] border px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors ${errors.question_text ? 'border-red-400' : 'border-gray-200'}`}
+                />
+                {errors.question_text && <p className="text-xs text-red-500">{errors.question_text}</p>}
+              </div>
+              <ImageUpload
+                label="Question Image (optional)"
+                file={questionImage}
+                onChange={setQuestionImage}
+              />
+            </CardContent>
+          </Card>
+
+          {/* Answer Options */}
+          <Card>
+            <CardHeader className="px-4 sm:px-5 py-3.5 border-b border-gray-100">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm text-gray-600 font-medium uppercase tracking-wide">Answer Options</CardTitle>
+                {errors.correct_answer && <p className="text-xs text-red-500">{errors.correct_answer}</p>}
+              </div>
+              <p className="text-xs text-gray-400 mt-0.5">Select the radio to mark the correct answer</p>
+            </CardHeader>
+            <CardContent className="px-4 sm:px-5 py-4 space-y-3">
+              {OPTIONS.map(letter => {
+                const textField = OPTION_TEXT_FIELD[letter];
+                const isCorrect = form.correct_answer === letter;
+                return (
+                  <div key={letter} className={`rounded-lg border p-3 space-y-2 transition-colors ${isCorrect ? 'border-emerald-300 bg-emerald-50/50' : 'border-gray-100'}`}>
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="radio"
+                        name="correct_answer"
+                        value={letter}
+                        checked={isCorrect}
+                        onChange={() => setField('correct_answer', letter)}
+                        className="accent-emerald-600 w-4 h-4 flex-shrink-0 cursor-pointer"
+                        title="Mark as correct"
+                      />
+                      <span className={`text-xs font-bold w-5 ${isCorrect ? 'text-emerald-600' : 'text-gray-400'}`}>
+                        {letter}
+                      </span>
+                      <Input
+                        placeholder={`Option ${letter}`}
+                        value={form[textField]}
+                        onChange={e => setField(textField, e.target.value)}
+                        className={`flex-1 ${errors[textField] ? 'border-red-400' : ''}`}
+                      />
+                    </div>
+                    {errors[textField] && (
+                      <p className="text-xs text-red-500 pl-11">{errors[textField]}</p>
+                    )}
+                    <div className="pl-11">
+                      <ImageUpload
+                        label={`Option ${letter} image (optional)`}
+                        file={optionImages[letter]}
+                        onChange={file => setOptionImages(prev => ({ ...prev, [letter]: file }))}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* RIGHT: Classification (sticky on desktop) */}
+        <div className="space-y-4 lg:sticky lg:top-4">
+          <Card>
+            <CardHeader className="px-4 sm:px-5 py-3.5 border-b border-gray-100">
+              <CardTitle className="text-sm text-gray-600 font-medium uppercase tracking-wide">Classification</CardTitle>
+            </CardHeader>
+            <CardContent className="px-4 sm:px-5 py-4 space-y-3">
+              {/* Category */}
+              <div className="space-y-1.5">
+                <Label>Category <span className="text-red-500">*</span></Label>
+                <Select
+                  value={form.category}
+                  onValueChange={v => { setField('category', v); setField('sub_category', ''); }}
+                >
+                  <SelectTrigger className={errors.category ? 'border-red-400' : ''}>
+                    <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent>
-                    {subCategoryOptions.map(s => (
-                      <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                    {CATEGORIES.map(c => (
+                      <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-                {errors.sub_category && <p className="text-xs text-red-500">{errors.sub_category}</p>}
+                {errors.category && <p className="text-xs text-red-500">{errors.category}</p>}
               </div>
-            )}
 
-            {/* Paper Set */}
-            <div className="space-y-1.5">
-              <Label>Paper Set <span className="text-red-500">*</span></Label>
-              <Select value={form.paper_set} onValueChange={v => setField('paper_set', v)}>
-                <SelectTrigger className={errors.paper_set ? 'border-red-400' : ''}>
-                  <SelectValue placeholder="Select paper set" />
-                </SelectTrigger>
-                <SelectContent>
-                  {PAPER_SETS.map(s => (
-                    <SelectItem key={s} value={s}>{s.toUpperCase()}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {errors.paper_set && <p className="text-xs text-red-500">{errors.paper_set}</p>}
-            </div>
+              {/* Sub-category (conditional) */}
+              {needsSubCategory && subCategoryOptions.length > 0 && (
+                <div className="space-y-1.5">
+                  <Label>Sub-Category <span className="text-red-500">*</span></Label>
+                  <Select value={form.sub_category} onValueChange={v => setField('sub_category', v)}>
+                    <SelectTrigger className={errors.sub_category ? 'border-red-400' : ''}>
+                      <SelectValue placeholder="Select sub-category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {subCategoryOptions.map(s => (
+                        <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {errors.sub_category && <p className="text-xs text-red-500">{errors.sub_category}</p>}
+                </div>
+              )}
 
-            {/* Difficulty */}
-            <div className="space-y-1.5">
-              <Label>Difficulty <span className="text-red-500">*</span></Label>
-              <Select value={form.difficulty} onValueChange={v => setField('difficulty', v)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {DIFFICULTIES.map(d => (
-                    <SelectItem key={d.value} value={d.value}>{d.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+              {/* Paper Set + Difficulty row */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label>Paper Set <span className="text-red-500">*</span></Label>
+                  <Select value={form.paper_set} onValueChange={v => setField('paper_set', v)}>
+                    <SelectTrigger className={errors.paper_set ? 'border-red-400' : ''}>
+                      <SelectValue placeholder="Set" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PAPER_SETS.map(s => (
+                        <SelectItem key={s} value={s}>{s.toUpperCase()}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {errors.paper_set && <p className="text-xs text-red-500">{errors.paper_set}</p>}
+                </div>
 
-            {/* Base Score */}
-            <div className="space-y-1.5">
-              <Label htmlFor="q-score">Base Score <span className="text-red-500">*</span></Label>
-              <Input
-                id="q-score"
-                type="number"
-                min="0"
-                step="0.5"
-                placeholder="e.g. 1"
-                value={form.base_score}
-                onChange={e => setField('base_score', e.target.value)}
-                className={errors.base_score ? 'border-red-400' : ''}
-              />
-              {errors.base_score && <p className="text-xs text-red-500">{errors.base_score}</p>}
-            </div>
+                <div className="space-y-1.5">
+                  <Label>Difficulty <span className="text-red-500">*</span></Label>
+                  <Select value={form.difficulty} onValueChange={v => setField('difficulty', v)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {DIFFICULTIES.map(d => (
+                        <SelectItem key={d.value} value={d.value}>{d.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
 
-            {/* Job Role (conditional: technical + S6+) */}
-            {needsJobRole && (
+              {/* Base Score */}
               <div className="space-y-1.5">
-                <Label htmlFor="q-jobrole">
-                  Job Role <span className="text-red-500">*</span>
-                  <span className="ml-1 text-xs text-gray-400 font-normal">(required for S6+)</span>
-                </Label>
+                <Label htmlFor="q-score">Base Score <span className="text-red-500">*</span></Label>
                 <Input
-                  id="q-jobrole"
-                  placeholder="e.g. Software Engineer"
-                  value={form.job_role}
-                  onChange={e => setField('job_role', e.target.value)}
-                  className={errors.job_role ? 'border-red-400' : ''}
+                  id="q-score"
+                  type="number"
+                  min="0"
+                  step="0.5"
+                  placeholder="e.g. 1"
+                  value={form.base_score}
+                  onChange={e => setField('base_score', e.target.value)}
+                  className={errors.base_score ? 'border-red-400' : ''}
                 />
-                {errors.job_role && <p className="text-xs text-red-500">{errors.job_role}</p>}
+                {errors.base_score && <p className="text-xs text-red-500">{errors.base_score}</p>}
               </div>
-            )}
-          </div>
 
-          {/* Semester */}
-          <div className="space-y-2">
-            <Label>
-              Semester <span className="text-red-500">*</span>
-              <span className="ml-1 text-xs text-gray-400 font-normal">(select all that apply)</span>
-            </Label>
-            <div className="flex flex-wrap gap-2">
-              {SEMESTERS.map(sem => (
-                <button
-                  key={sem}
-                  type="button"
-                  onClick={() => toggleSemester(sem)}
-                  className={`w-10 h-9 rounded-lg text-xs font-semibold border transition-colors ${
-                    form.semester.includes(sem)
-                      ? 'bg-indigo-600 text-white border-indigo-600'
-                      : 'bg-white text-gray-600 border-gray-200 hover:border-indigo-300 hover:text-indigo-600'
-                  }`}
-                >
-                  S{sem}
-                </button>
-              ))}
-            </div>
-            {errors.semester && <p className="text-xs text-red-500">{errors.semester}</p>}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Answer Options */}
-      <Card>
-        <CardHeader className="px-5 py-4 border-b border-gray-100">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-sm text-gray-600 font-medium uppercase tracking-wide">Answer Options</CardTitle>
-            {errors.correct_answer && (
-              <p className="text-xs text-red-500">{errors.correct_answer}</p>
-            )}
-          </div>
-          <p className="text-xs text-gray-400 mt-0.5">Select the radio button to mark the correct answer</p>
-        </CardHeader>
-        <CardContent className="px-5 py-5 space-y-4">
-          {OPTIONS.map(letter => {
-            const textField = OPTION_TEXT_FIELD[letter];
-            const isCorrect = form.correct_answer === letter;
-            return (
-              <div key={letter} className={`rounded-lg border p-3 space-y-2 transition-colors ${isCorrect ? 'border-emerald-300 bg-emerald-50/50' : 'border-gray-100'}`}>
-                <div className="flex items-center gap-3">
-                  <input
-                    type="radio"
-                    name="correct_answer"
-                    value={letter}
-                    checked={isCorrect}
-                    onChange={() => setField('correct_answer', letter)}
-                    className="accent-emerald-600 w-4 h-4 flex-shrink-0 cursor-pointer"
-                    title="Mark as correct"
-                  />
-                  <span className={`text-xs font-bold w-5 ${isCorrect ? 'text-emerald-600' : 'text-gray-400'}`}>
-                    {letter}
-                  </span>
+              {/* Job Role (conditional: technical + S6+) */}
+              {needsJobRole && (
+                <div className="space-y-1.5">
+                  <Label htmlFor="q-jobrole">
+                    Job Role <span className="text-red-500">*</span>
+                    <span className="ml-1 text-xs text-gray-400 font-normal">(S6+)</span>
+                  </Label>
                   <Input
-                    placeholder={`Option ${letter}`}
-                    value={form[textField]}
-                    onChange={e => setField(textField, e.target.value)}
-                    className={`flex-1 ${errors[textField] ? 'border-red-400' : ''}`}
+                    id="q-jobrole"
+                    placeholder="e.g. Software Engineer"
+                    value={form.job_role}
+                    onChange={e => setField('job_role', e.target.value)}
+                    className={errors.job_role ? 'border-red-400' : ''}
                   />
+                  {errors.job_role && <p className="text-xs text-red-500">{errors.job_role}</p>}
                 </div>
-                {errors[textField] && (
-                  <p className="text-xs text-red-500 pl-11">{errors[textField]}</p>
-                )}
-                <div className="pl-11">
-                  <ImageUpload
-                    label={`Option ${letter} image (optional)`}
-                    file={optionImages[letter]}
-                    onChange={file => setOptionImages(prev => ({ ...prev, [letter]: file }))}
-                  />
+              )}
+
+              {/* Semester */}
+              <div className="space-y-2">
+                <Label>
+                  Semester <span className="text-red-500">*</span>
+                  <span className="ml-1 text-xs text-gray-400 font-normal">(select all that apply)</span>
+                </Label>
+                <div className="grid grid-cols-4 gap-1.5">
+                  {SEMESTERS.map(sem => (
+                    <button
+                      key={sem}
+                      type="button"
+                      onClick={() => toggleSemester(sem)}
+                      className={`h-9 rounded-lg text-xs font-semibold border transition-colors ${
+                        form.semester.includes(sem)
+                          ? 'bg-indigo-600 text-white border-indigo-600'
+                          : 'bg-white text-gray-600 border-gray-200 hover:border-indigo-300 hover:text-indigo-600'
+                      }`}
+                    >
+                      S{sem}
+                    </button>
+                  ))}
                 </div>
+                {errors.semester && <p className="text-xs text-red-500">{errors.semester}</p>}
               </div>
-            );
-          })}
-        </CardContent>
-      </Card>
 
-      {/* Actions */}
-      <div className="flex gap-3 pb-6">
-        <Button variant="secondary" onClick={() => navigate(-1)}>Cancel</Button>
-        <Button onClick={handleSubmit} disabled={isSubmitting}>
-          {isSubmitting ? 'Saving...' : 'Save Question'}
-        </Button>
+              {/* Actions inside classification card on desktop */}
+              <div className="pt-2 flex flex-col gap-2">
+                <Button onClick={handleSubmit} disabled={isSubmitting} className="w-full">
+                  {isSubmitting ? 'Saving...' : 'Save Question'}
+                </Button>
+                <Button variant="secondary" onClick={() => navigate(-1)} className="w-full">
+                  Cancel
+                </Button>
+                {createMutation.isError && (
+                  <p className="text-xs text-red-500 text-center">
+                    {createMutation.error?.response?.data?.message || 'Failed to save. Please try again.'}
+                  </p>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
-
-      {createMutation.isError && (
-        <p className="text-sm text-red-500">
-          {createMutation.error?.response?.data?.message || 'Failed to save question. Please try again.'}
-        </p>
-      )}
     </div>
   );
 }
