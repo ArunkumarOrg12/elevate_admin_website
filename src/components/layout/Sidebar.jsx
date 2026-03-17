@@ -4,13 +4,14 @@ import {
   LayoutDashboard, Users, ClipboardList, Building2,
   BarChart3, AlertTriangle, FileText, Settings, Building,
   GraduationCap, ChevronLeft, ChevronRight, LogOut, X,
-  ChevronDown, HelpCircle, PlusCircle, LibraryBig, Layers, RefreshCw,
+  ChevronDown, HelpCircle, PlusCircle, LibraryBig, Layers, RefreshCw, LayoutList,
 } from 'lucide-react';
 import { SidebarContext } from '../../context/SidebarContext';
 import { useAuth } from '../../hooks/useAuth';
 import { ROLES } from '../../constants/roles';
 
 const ASSESSMENT_CHILDREN = [
+  { icon: LayoutList,  label: 'Overview',      path: '/assessments',            roles: [ROLES.SUPER_ADMIN, ROLES.COLLEGE_ADMIN], exact: true },
   { icon: HelpCircle,  label: 'Questions',     path: '/assessments/questions',  roles: [ROLES.SUPER_ADMIN, ROLES.COLLEGE_ADMIN] },
   { icon: PlusCircle,  label: 'Add Question',  path: '/assessments/questions/add', roles: [ROLES.SUPER_ADMIN, ROLES.COLLEGE_ADMIN] },
   { icon: Layers,      label: 'Paper Sets',    path: '/assessments/paper-sets', roles: [ROLES.SUPER_ADMIN, ROLES.COLLEGE_ADMIN] },

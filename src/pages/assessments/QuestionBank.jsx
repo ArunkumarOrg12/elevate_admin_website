@@ -20,12 +20,18 @@ const DIFFICULTY_COLORS = {
 export default function QuestionBank() {
   const [filter, setFilter] = useState('all');
 
-  const { data, isLoading, isError } = useQuestionBank(filter !== 'all' ? { status: filter } : undefined);
+  const bankParams = filter === 'published'
+    ? { is_published: true }
+    : filter === 'unpublished'
+      ? { is_published: false }
+      : undefined;
+
+  const { data, isLoading, isError } = useQuestionBank(bankParams);
   const { data: statsData } = useQuestionBankStats();
   const publishMutation = usePublishBankQuestion();
   const unpublishMutation = useUnpublishBankQuestion();
 
-  const questions = data?.data ?? [];
+  const questions = data?.questions ?? [];
   const stats = statsData?.data ?? {};
 
   return (
@@ -44,7 +50,7 @@ export default function QuestionBank() {
           <StatCard label="TOTAL" value={stats.total ?? '—'} icon={LibraryBig} accentColor="indigo" />
           <StatCard label="PUBLISHED" value={stats.published ?? '—'} icon={Globe} accentColor="emerald" />
           <StatCard label="UNPUBLISHED" value={stats.unpublished ?? '—'} icon={EyeOff} accentColor="amber" />
-          <StatCard label="BY DIFFICULTY" value={`${stats.hard ?? 0} Hard`} icon={BarChart2} accentColor="red" />
+          <StatCard label="BY DIFFICULTY" value={`${stats.hard ?? '—'} `} icon={BarChart2} accentColor="red" />
         </div>
       )}
 
@@ -92,24 +98,24 @@ export default function QuestionBank() {
             <TableBody>
               {questions.map((q, idx) => {
                 const qId = q.id || q._id;
-                const isPublished = q.status === 'published' || q.isPublished;
+                const isPublished = q.is_published === true;
                 const isPending = publishMutation.isPending || unpublishMutation.isPending;
 
                 return (
                   <TableRow key={qId}>
                     <TableCell className="text-gray-400 text-xs w-10">{idx + 1}</TableCell>
                     <TableCell className="max-w-[260px]">
-                      <span className="text-sm text-gray-800 line-clamp-2">{q.text || q.question}</span>
+                      <span className="text-sm text-gray-800 line-clamp-2">{q.question_text}</span>
                     </TableCell>
                     <TableCell>
-                      <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full uppercase">{q.type || 'MCQ'}</span>
+                      <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full uppercase">{q.sub_category || q.category || 'MCQ'}</span>
                     </TableCell>
                     <TableCell>
                       <span className={`text-xs px-2 py-0.5 rounded-full font-medium capitalize ${DIFFICULTY_COLORS[q.difficulty] || 'bg-gray-100 text-gray-600'}`}>
                         {q.difficulty || '—'}
                       </span>
                     </TableCell>
-                    <TableCell className="text-sm text-gray-700">{q.marks ?? '—'}</TableCell>
+                    <TableCell className="text-sm text-gray-700">{q.base_score ?? '—'}</TableCell>
                     <TableCell>
                       <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
                         isPublished ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-100 text-gray-500'

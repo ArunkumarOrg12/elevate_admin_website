@@ -10,11 +10,11 @@ import { usePaperSets, usePaperSetQuestions, useRemoveQuestionFromPaperSet } fro
 
 function PaperSetRow({ set }) {
   const [expanded, setExpanded] = useState(false);
-  const { data, isLoading } = usePaperSetQuestions(expanded ? set.id || set._id : null);
+  const setId = typeof set === 'string' ? set : (set.id || set._id);
+  const { data, isLoading } = usePaperSetQuestions(expanded ? setId : null);
   const removeMutation = useRemoveQuestionFromPaperSet();
 
-  const questions = data?.data ?? [];
-  const setId = set.id || set._id;
+  const questions = data?.data ?? data?.questions ?? [];
 
   return (
     <>
@@ -27,16 +27,16 @@ function PaperSetRow({ set }) {
             ? <ChevronDown size={15} className="text-gray-400" />
             : <ChevronRight size={15} className="text-gray-400" />}
         </TableCell>
-        <TableCell className="font-medium text-gray-900 text-sm">{set.name || set.setId || `Set ${setId}`}</TableCell>
-        <TableCell className="text-sm text-gray-600">{set.description || '—'}</TableCell>
+        <TableCell className="font-medium text-gray-900 text-sm">{typeof set === 'string' ? set : (set.name || set.setId || `Set ${setId}`)}</TableCell>
+        <TableCell className="text-sm text-gray-600">{typeof set === 'string' ? '—' : (set.description || '—')}</TableCell>
         <TableCell>
           <span className="text-xs bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full font-medium">
-            {set.questionCount ?? set.totalQuestions ?? '—'} questions
+            {typeof set === 'string' ? '—' : (set.questionCount ?? set.totalQuestions ?? '—')} questions
           </span>
         </TableCell>
         <TableCell>
-          <Badge variant={set.status === 'active' ? 'completed' : 'scheduled'}>
-            {set.status || 'active'}
+          <Badge variant={typeof set !== 'string' && set.status === 'active' ? 'completed' : 'scheduled'}>
+            {typeof set === 'string' ? 'active' : (set.status || 'active')}
           </Badge>
         </TableCell>
       </TableRow>
@@ -92,7 +92,7 @@ function PaperSetRow({ set }) {
 
 export default function PaperSets() {
   const { data, isLoading, isError } = usePaperSets();
-  const sets = data?.data ?? [];
+  const sets = data?.paperSets ?? data?.data ?? [];
 
   return (
     <div className="page-enter space-y-5">
@@ -134,7 +134,7 @@ export default function PaperSets() {
             </TableHeader>
             <TableBody>
               {sets.map(set => (
-                <PaperSetRow key={set.id || set._id || set.setId} set={set} />
+                <PaperSetRow key={typeof set === 'string' ? set : (set.id || set._id || set.setId)} set={set} />
               ))}
             </TableBody>
           </Table>
