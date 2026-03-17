@@ -22,7 +22,7 @@ import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import StatCard from '../../components/common/StatCard';
 import {
   useCycles, useCycle, useCreateCycle, useChangeCycleStatus,
-  useCycleResults, useCycleLeaderboard,
+  useCycleResults, useCycleLeaderboard, usePaperSets,
 } from '../../controllers/questionsController';
 
 const STATUS_OPTIONS = [
@@ -41,8 +41,13 @@ const STATUS_COLORS = {
 
 function CreateCycleDialog({ open, onOpenChange }) {
   const createMutation = useCreateCycle();
-  const [form, setForm] = useState({ title: '', batch: '', start_date: null, end_date: null });
+  const { data: paperSetsData, isLoading: psLoading } = usePaperSets();
+  const [form, setForm] = useState({ title: '', batch: '', paper_set: '', start_date: null, end_date: null });
   const [calOpen, setCalOpen] = useState({ start: false, end: false });
+
+  const paperSets = Array.isArray(paperSetsData)
+    ? paperSetsData
+    : (paperSetsData?.paperSets ?? paperSetsData?.data ?? []);
 
   const handleCreate = () => {
     if (!form.title.trim()) return;
@@ -50,10 +55,11 @@ function CreateCycleDialog({ open, onOpenChange }) {
       {
         title: form.title,
         batch: form.batch || undefined,
+        paper_set: form.paper_set || undefined,
         start_date: form.start_date,
         end_date: form.end_date,
       },
-      { onSuccess: () => { setForm({ title: '', batch: '', start_date: null, end_date: null }); onOpenChange(false); } }
+      { onSuccess: () => { setForm({ title: '', batch: '', paper_set: '', start_date: null, end_date: null }); onOpenChange(false); } }
     );
   };
 
@@ -80,6 +86,29 @@ function CreateCycleDialog({ open, onOpenChange }) {
               value={form.batch}
               onChange={e => setForm(p => ({ ...p, batch: e.target.value }))}
             />
+          </div>
+          <div className="space-y-1.5">
+            <Label>Paper Set</Label>
+            <Select
+              value={form.paper_set || undefined}
+              onValueChange={val => setForm(p => ({ ...p, paper_set: val }))}
+              disabled={psLoading}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder={psLoading ? 'Loading...' : 'Select a paper set'} />
+              </SelectTrigger>
+              <SelectContent>
+                {paperSets.map((ps, i) => {
+                  const id = typeof ps === 'string' ? ps : String(ps.id || ps._id || i);
+                  const label = typeof ps === 'string' ? ps : (ps.name || ps.title || ps.setId || id);
+                  return (
+                    <SelectItem key={id} value={id}>
+                      {label}
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
           </div>
           <div className="grid grid-cols-2 gap-3">
             {/* Start Date */}
