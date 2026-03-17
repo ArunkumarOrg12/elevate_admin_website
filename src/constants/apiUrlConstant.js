@@ -21,6 +21,11 @@ export const ADMIN_PATHS = {
   REPORTS: '/api/admin/reports',
   SETTINGS: '/api/admin/settings',
   COLLEGES: '/api/admin/colleges',
+  // Assessment sub-resources
+  QUESTIONS: '/api/v1/assessments/questions',
+  PAPER_SETS: '/api/v1/assessments/paper-sets',
+  QUESTION_BANK: '/api/v1/assessments/bank',
+  CYCLES: '/api/v1/assessments/cycles',
 };
 
 
@@ -35,4 +40,9 @@ export const QUERY_KEYS = {
   REPORTS: ['reports'],
   SETTINGS: ['settings'],
   COLLEGES: ['colleges'],
+  // Assessment sub-resources
+  QUESTIONS: ['questions'],
+  PAPER_SETS: ['paper-sets'],
+  QUESTION_BANK: ['question-bank'],
+  CYCLES: ['cycles'],
 };
