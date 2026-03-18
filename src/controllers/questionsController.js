@@ -42,8 +42,11 @@ const cyclesApi = {
   getById: (id) => api.get(`${ADMIN_PATHS.CYCLES}/${id}`),
   create: (data) => api.post(ADMIN_PATHS.CYCLES, data),
   changeStatus: (id, data) => api.patch(`${ADMIN_PATHS.CYCLES}/${id}/status`, data),
+  publish: (id) => api.post(`${ADMIN_PATHS.CYCLES}/${id}/publish`),
+  unpublish: (id) => api.post(`${ADMIN_PATHS.CYCLES}/${id}/unpublish`),
   getResults: (id) => api.get(`${ADMIN_PATHS.CYCLES}/${id}/results`),
   getLeaderboard: (id) => api.get(`${ADMIN_PATHS.CYCLES}/${id}/leaderboard`),
+  getParticipants: (id) => api.get(`${ADMIN_PATHS.CYCLES}/${id}/participants`),
 };
 
 // ── Question Hooks ─────────────────────────────────────────────────────────────
@@ -191,6 +194,30 @@ export function useChangeCycleStatus() {
   return useMutation({
     mutationFn: ({ id, ...data }) => cyclesApi.changeStatus(id, data),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: QUERY_KEYS.CYCLES }),
+  });
+}
+
+export function usePublishCycle() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id) => cyclesApi.publish(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: QUERY_KEYS.CYCLES }),
+  });
+}
+
+export function useUnpublishCycle() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id) => cyclesApi.unpublish(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: QUERY_KEYS.CYCLES }),
+  });
+}
+
+export function useCycleParticipants(id) {
+  return useQuery({
+    queryKey: [...QUERY_KEYS.CYCLES, id, 'participants'],
+    queryFn: () => cyclesApi.getParticipants(id),
+    enabled: !!id,
   });
 }
 
