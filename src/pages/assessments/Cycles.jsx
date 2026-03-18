@@ -28,14 +28,14 @@ import {
 } from '../../controllers/questionsController';
 
 const STATUS_OPTIONS = [
-  { value: 'draft', label: 'Draft' },
+  { value: 'scheduled', label: 'Scheduled' },
   { value: 'active', label: 'Active' },
   { value: 'completed', label: 'Completed' },
   { value: 'cancelled', label: 'Cancelled' },
 ];
 
 const STATUS_COLORS = {
-  draft: 'bg-gray-100 text-gray-600',
+  scheduled: 'bg-gray-100 text-gray-600',
   active: 'bg-blue-50 text-blue-700',
   completed: 'bg-emerald-50 text-emerald-700',
   cancelled: 'bg-red-50 text-red-700',
@@ -325,7 +325,7 @@ export default function Cycles() {
     total: cycles.length,
     active: cycles.filter(c => c.status === 'active').length,
     completed: cycles.filter(c => c.status === 'completed').length,
-    draft: cycles.filter(c => c.status === 'draft').length,
+    scheduled: cycles.filter(c => c.status === 'scheduled').length,
   };
 
   return (
@@ -358,7 +358,7 @@ export default function Cycles() {
         <StatCard label="TOTAL CYCLES" value={stats.total} icon={RefreshCw} accentColor="indigo" />
         <StatCard label="ACTIVE" value={stats.active} icon={RefreshCw} accentColor="blue" />
         <StatCard label="COMPLETED" value={stats.completed} icon={RefreshCw} accentColor="emerald" />
-        <StatCard label="DRAFT" value={stats.draft} icon={RefreshCw} accentColor="amber" />
+        <StatCard label="SCHEDULED" value={stats.scheduled} icon={RefreshCw} accentColor="amber" />
       </div>
 
       {/* Table */}
@@ -470,14 +470,14 @@ export default function Cycles() {
                       {/* Status badge */}
                       <TableCell>
                         <span className={`text-xs px-2 py-0.5 rounded-full font-medium capitalize ${STATUS_COLORS[cycle.status] || 'bg-gray-100 text-gray-600'}`}>
-                          {cycle.status || 'draft'}
+                          {cycle.status || 'scheduled'}
                         </span>
                       </TableCell>
 
                       {/* Change status */}
                       <TableCell>
                         <Select
-                          value={cycle.status || 'draft'}
+                          value={cycle.status || 'scheduled'}
                           onValueChange={(val) => changeStatusMutation.mutate({ id: cId, status: val })}
                           disabled={changeStatusMutation.isPending}
                         >
