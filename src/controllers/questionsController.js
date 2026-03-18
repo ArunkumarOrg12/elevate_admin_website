@@ -173,11 +173,12 @@ export function useCycles() {
   });
 }
 
-export function useCycle(id) {
+export function useCycle(id, options = {}) {
   return useQuery({
     queryKey: [...QUERY_KEYS.CYCLES, id],
     queryFn: () => cyclesApi.getById(id),
     enabled: !!id,
+    ...options,
   });
 }
 
@@ -213,11 +214,12 @@ export function useUnpublishCycle() {
   });
 }
 
-export function useCycleParticipants(id) {
+export function useCycleParticipants(id, options = {}) {
   return useQuery({
     queryKey: [...QUERY_KEYS.CYCLES, id, 'participants'],
     queryFn: () => cyclesApi.getParticipants(id),
     enabled: !!id,
+    ...options,
   });
 }
 
@@ -229,11 +231,12 @@ export function useCycleResults(id) {
   });
 }
 
-export function useCycleLeaderboard(id) {
+export function useCycleLeaderboard(id, options = {}) {
   return useQuery({
     queryKey: [...QUERY_KEYS.CYCLES, id, 'leaderboard'],
     queryFn: () => cyclesApi.getLeaderboard(id),
     enabled: !!id,
+    ...options,
   });
 }
 
