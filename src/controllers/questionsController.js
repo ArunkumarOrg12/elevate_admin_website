@@ -41,6 +41,7 @@ const cyclesApi = {
   getAll: () => api.get(ADMIN_PATHS.CYCLES),
   getById: (id) => api.get(`${ADMIN_PATHS.CYCLES}/${id}`),
   create: (data) => api.post(ADMIN_PATHS.CYCLES, data),
+  remove: (id) => api.delete(`${ADMIN_PATHS.CYCLES}/${id}`),
   changeStatus: (id, data) => api.patch(`${ADMIN_PATHS.CYCLES}/${id}/status`, data),
   publish: (id) => api.post(`${ADMIN_PATHS.CYCLES}/${id}/publish`),
   unpublish: (id) => api.post(`${ADMIN_PATHS.CYCLES}/${id}/unpublish`),
@@ -194,6 +195,14 @@ export function useChangeCycleStatus() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, ...data }) => cyclesApi.changeStatus(id, data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: QUERY_KEYS.CYCLES }),
+  });
+}
+
+export function useDeleteCycle() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id) => cyclesApi.remove(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: QUERY_KEYS.CYCLES }),
   });
 }

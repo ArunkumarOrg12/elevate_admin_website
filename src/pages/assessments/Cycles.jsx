@@ -3,7 +3,7 @@ import { format } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import {
   RefreshCw, Plus, Calendar, Users, Trophy, Loader2,
-  Search, Filter, Eye, Globe, EyeOff,
+  Search, Filter, Eye, Globe, EyeOff, Trash2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,7 +23,7 @@ import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import StatCard from '../../components/common/StatCard';
 import {
   useCycles, useCreateCycle, useChangeCycleStatus,
-  usePublishCycle, useUnpublishCycle,
+  usePublishCycle, useUnpublishCycle, useDeleteCycle,
   useCycleResults, useCycleLeaderboard, usePaperSets,
 } from '../../controllers/questionsController';
 
@@ -290,12 +290,58 @@ function CycleResultsDialog({ cycleId, cycleName, open, onOpenChange }) {
   );
 }
 
+// ── Delete Confirmation Dialog ─────────────────────────────────────────────────
+
+function DeleteCycleDialog({ cycle, open, onOpenChange }) {
+  const deleteMutation = useDeleteCycle();
+
+  const handleDelete = () => {
+    const cId = cycle?.id || cycle?._id;
+    deleteMutation.mutate(cId, {
+      onSuccess: () => onOpenChange(false),
+    });
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle>Delete Cycle</DialogTitle>
+          <DialogDescription>
+            This action cannot be undone.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="px-6 py-3">
+          <p className="text-sm text-gray-700">
+            Are you sure you want to delete{' '}
+            <span className="font-semibold text-gray-900">"{cycle?.title}"</span>?
+            All associated data will be permanently removed.
+          </p>
+        </div>
+        <DialogFooter>
+          <Button variant="secondary" onClick={() => onOpenChange(false)} disabled={deleteMutation.isPending}>
+            Cancel
+          </Button>
+          <Button
+            variant="destructive"
+            onClick={handleDelete}
+            disabled={deleteMutation.isPending}
+          >
+            {deleteMutation.isPending ? <><Loader2 size={14} className="animate-spin" /> Deleting...</> : 'Delete Cycle'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // ── Main Page ──────────────────────────────────────────────────────────────────
 
 export default function Cycles() {
   const navigate = useNavigate();
   const [showCreate, setShowCreate] = useState(false);
   const [resultsDialog, setResultsDialog] = useState(null);
+  const [deleteDialog, setDeleteDialog] = useState(null); // { id, title } | null
   const [searchQ, setSearchQ] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterBatch, setFilterBatch] = useState('all');
@@ -304,6 +350,7 @@ export default function Cycles() {
   const changeStatusMutation = useChangeCycleStatus();
   const publishMutation = usePublishCycle();
   const unpublishMutation = useUnpublishCycle();
+  const deleteMutation = useDeleteCycle();
 
   const cycles = data?.cycles ?? data?.data ?? [];
 
@@ -339,6 +386,11 @@ export default function Cycles() {
           onOpenChange={(open) => !open && setResultsDialog(null)}
         />
       )}
+      <DeleteCycleDialog
+        cycle={deleteDialog}
+        open={!!deleteDialog}
+        onOpenChange={(open) => !open && setDeleteDialog(null)}
+      />
 
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
@@ -560,6 +612,16 @@ export default function Cycles() {
                               Results
                             </Button>
                           )}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-7 text-xs text-red-400 hover:text-red-600 hover:bg-red-50 px-2"
+                            onClick={() => setDeleteDialog({ id: cId, _id: cId, title: cycle.title })}
+                            disabled={deleteMutation.isPending}
+                            title="Delete Cycle"
+                          >
+                            <Trash2 size={12} />
+                          </Button>
                         </div>
                       </TableCell>
                     </TableRow>
