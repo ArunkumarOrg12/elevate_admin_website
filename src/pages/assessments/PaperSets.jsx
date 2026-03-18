@@ -6,15 +6,11 @@ import { Badge } from '@/components/ui/badge';
 import {
   Table, TableHeader, TableBody, TableHead, TableRow, TableCell,
 } from '@/components/ui/table';
-import { usePaperSets, usePaperSetQuestions, useRemoveQuestionFromPaperSet } from '../../controllers/questionsController';
+import { usePaperSets, useRemoveQuestionFromPaperSet } from '../../controllers/questionsController';
 
-function PaperSetRow({ set }) {
+function PaperSetRow({ setName, questions }) {
   const [expanded, setExpanded] = useState(false);
-  const setId = typeof set === 'string' ? set : (set.id || set._id);
-  const { data, isLoading } = usePaperSetQuestions(expanded ? setId : null);
   const removeMutation = useRemoveQuestionFromPaperSet();
-
-  const questions = data?.data ?? data?.questions ?? [];
 
   return (
     <>
@@ -27,17 +23,15 @@ function PaperSetRow({ set }) {
             ? <ChevronDown size={15} className="text-gray-400" />
             : <ChevronRight size={15} className="text-gray-400" />}
         </TableCell>
-        <TableCell className="font-medium text-gray-900 text-sm">{typeof set === 'string' ? set : (set.name || set.setId || `Set ${setId}`)}</TableCell>
-        <TableCell className="text-sm text-gray-600">{typeof set === 'string' ? '—' : (set.description || '—')}</TableCell>
+        <TableCell className="font-medium text-gray-900 text-sm">{setName}</TableCell>
+        <TableCell className="text-sm text-gray-600">—</TableCell>
         <TableCell>
           <span className="text-xs bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full font-medium">
-            {typeof set === 'string' ? '—' : (set.questionCount ?? set.totalQuestions ?? '—')} questions
+            {questions.length} questions
           </span>
         </TableCell>
         <TableCell>
-          <Badge variant={typeof set !== 'string' && set.status === 'active' ? 'completed' : 'scheduled'}>
-            {typeof set === 'string' ? 'active' : (set.status || 'active')}
-          </Badge>
+          <Badge variant="completed">active</Badge>
         </TableCell>
       </TableRow>
 
@@ -45,9 +39,7 @@ function PaperSetRow({ set }) {
         <TableRow>
           <TableCell colSpan={5} className="p-0 bg-gray-50/60">
             <div className="px-8 py-3">
-              {isLoading ? (
-                <p className="text-xs text-gray-400 py-2">Loading questions...</p>
-              ) : questions.length === 0 ? (
+              {questions.length === 0 ? (
                 <div className="flex items-center gap-2 py-3 text-gray-400">
                   <HelpCircle size={14} />
                   <span className="text-xs">No questions in this paper set.</span>
@@ -60,19 +52,22 @@ function PaperSetRow({ set }) {
                       className="flex items-center gap-3 bg-white rounded-[8px] px-3 py-2 border border-gray-100"
                     >
                       <span className="text-xs font-semibold text-gray-400 w-5">{idx + 1}</span>
-                      <span className="text-sm text-gray-800 flex-1 line-clamp-1">{q.text || q.question}</span>
+                      <span className="text-sm text-gray-800 flex-1 line-clamp-1">
+                        {q.question_text || q.text || q.question}
+                      </span>
                       <span className={`text-xs px-1.5 py-0.5 rounded-full capitalize ${
                         q.difficulty === 'easy' ? 'bg-emerald-50 text-emerald-700'
                         : q.difficulty === 'hard' ? 'bg-red-50 text-red-700'
                         : 'bg-amber-50 text-amber-700'
                       }`}>{q.difficulty || 'medium'}</span>
+                      <span className="text-xs text-gray-400 hidden sm:inline">{q.category?.replace(/_/g, ' ') || ''}</span>
                       <Button
                         variant="ghost"
                         size="sm"
                         className="h-6 w-6 p-0 text-gray-400 hover:text-red-500"
                         onClick={(e) => {
                           e.stopPropagation();
-                          removeMutation.mutate({ setId, qId: q.id || q._id });
+                          removeMutation.mutate({ setId: setName, qId: q.id || q._id });
                         }}
                         title="Remove from set"
                       >
@@ -93,6 +88,7 @@ function PaperSetRow({ set }) {
 export default function PaperSets() {
   const { data, isLoading, isError } = usePaperSets();
   const sets = data?.paperSets ?? data?.data ?? [];
+  const questionsByPaperSet = data?.questionsByPaperSet ?? {};
 
   return (
     <div className="page-enter space-y-5">
@@ -133,8 +129,12 @@ export default function PaperSets() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {sets.map(set => (
-                <PaperSetRow key={typeof set === 'string' ? set : (set.id || set._id || set.setId)} set={set} />
+              {sets.map(setName => (
+                <PaperSetRow
+                  key={setName}
+                  setName={setName}
+                  questions={questionsByPaperSet[setName] ?? []}
+                />
               ))}
             </TableBody>
           </Table>

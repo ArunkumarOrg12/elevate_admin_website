@@ -13,6 +13,7 @@ import { useCreateQuestion, questionsApi } from '../../controllers/questionsCont
 
 const CATEGORIES = [
   { value: 'cognitive_ability', label: 'Cognitive Ability' },
+  { value: 'behavioral_traits', label: 'Behavioral Traits' },
   { value: 'technical', label: 'Technical' },
   { value: 'verbal', label: 'Verbal' },
   { value: 'aptitude', label: 'Aptitude' },
@@ -24,6 +25,25 @@ const SUB_CATEGORIES = {
     { value: 'verbal_reasoning', label: 'Verbal Reasoning' },
     { value: 'numerical_reasoning', label: 'Numerical Reasoning' },
     { value: 'abstract_reasoning', label: 'Abstract Reasoning' },
+  ],
+  behavioral_traits: [
+    { value: 'conscientiousness', label: 'Conscientiousness' },
+    { value: 'openness', label: 'Openness' },
+    { value: 'agreeableness', label: 'Agreeableness' },
+    { value: 'emotional_stability', label: 'Emotional Stability' },
+    { value: 'extraversion', label: 'Extraversion' },
+    { value: 'leadership', label: 'Leadership' },
+    { value: 'teamwork', label: 'Teamwork' },
+    { value: 'adaptability', label: 'Adaptability' },
+  ],
+  technical: [
+    { value: 'programming', label: 'Programming' },
+    { value: 'data_structures', label: 'Data Structures' },
+    { value: 'algorithms', label: 'Algorithms' },
+    { value: 'databases', label: 'Databases' },
+    { value: 'networking', label: 'Networking' },
+    { value: 'system_design', label: 'System Design' },
+    { value: 'os_concepts', label: 'OS Concepts' },
   ],
   verbal: [
     { value: 'reading_comprehension', label: 'Reading Comprehension' },
@@ -94,14 +114,13 @@ export default function AddQuestion() {
   const isTechnical = form.category === 'technical';
   const hasSeniorSemester = form.semester.some(s => s >= 6);
   const needsJobRole = isTechnical && hasSeniorSemester;
-  const needsSubCategory = form.category && !isTechnical;
   const subCategoryOptions = SUB_CATEGORIES[form.category] || [];
 
   const validate = () => {
     const e = {};
     if (!form.question_text.trim()) e.question_text = 'Required';
     if (!form.category) e.category = 'Required';
-    if (needsSubCategory && !form.sub_category) e.sub_category = 'Required for this category';
+    if (form.category && subCategoryOptions.length > 0 && !form.sub_category) e.sub_category = 'Required';
     if (!form.paper_set) e.paper_set = 'Required';
     if (form.semester.length === 0) e.semester = 'Select at least one semester';
     if (!form.difficulty) e.difficulty = 'Required';
@@ -130,7 +149,7 @@ export default function AddQuestion() {
       option_b_text: form.option_b_text.trim(),
       option_c_text: form.option_c_text.trim(),
       option_d_text: form.option_d_text.trim(),
-      ...(needsSubCategory && form.sub_category && { sub_category: form.sub_category }),
+      ...(form.sub_category && { sub_category: form.sub_category }),
       ...(needsJobRole && form.job_role && { job_role: form.job_role.trim() }),
     };
 
@@ -287,8 +306,8 @@ export default function AddQuestion() {
                 {errors.category && <p className="text-xs text-red-500">{errors.category}</p>}
               </div>
 
-              {/* Sub-category (conditional) */}
-              {needsSubCategory && subCategoryOptions.length > 0 && (
+              {/* Sub-category */}
+              {form.category && subCategoryOptions.length > 0 && (
                 <div className="space-y-1.5">
                   <Label>Sub-Category <span className="text-red-500">*</span></Label>
                   <Select value={form.sub_category} onValueChange={v => setField('sub_category', v)}>
