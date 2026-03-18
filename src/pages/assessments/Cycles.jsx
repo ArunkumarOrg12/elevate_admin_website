@@ -461,10 +461,25 @@ export default function Cycles() {
 
                       {/* Participants */}
                       <TableCell>
-                        <div className="flex items-center gap-1 text-sm text-gray-600">
-                          <Users size={13} className="text-gray-400" />
-                          {cycle.participantCount ?? '—'}
-                        </div>
+                        {cycle.participation ? (
+                          <div className="space-y-0.5">
+                            <div className="flex items-center gap-1 text-sm text-gray-700">
+                              <Users size={13} className="text-gray-400" />
+                              <span className="font-medium">{cycle.participation.total_started}</span>
+                              <span className="text-xs text-gray-400">started</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-xs text-gray-400 pl-4">
+                              <span className="text-emerald-600">{cycle.participation.total_submitted} submitted</span>
+                              {cycle.participation.in_progress > 0 && (
+                                <span className="text-blue-500">{cycle.participation.in_progress} in progress</span>
+                              )}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1 text-sm text-gray-400">
+                            <Users size={13} className="text-gray-400" />—
+                          </div>
+                        )}
                       </TableCell>
 
                       {/* Status badge */}
