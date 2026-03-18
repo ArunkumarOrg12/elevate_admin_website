@@ -15,7 +15,7 @@ export const ADMIN_PATHS = {
   DASHBOARD: '/api/admin/dashboard',
   STUDENTS: '/api/admin/students',
   ASSESSMENTS: '/api/admin/assessments',
-  DEPARTMENTS: '/api/admin/departments',
+  DEPARTMENTS: '/api/v1/department/departments',
   ANALYTICS: '/api/admin/analytics',
   RISK_MONITOR: '/api/admin/risk-monitor',
   REPORTS: '/api/admin/reports',

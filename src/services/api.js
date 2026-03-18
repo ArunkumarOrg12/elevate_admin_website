@@ -72,7 +72,7 @@ api.interceptors.response.use(
         _accessToken = null;
         _refreshQueue.forEach(p => p.reject(refreshErr));
         _refreshQueue = [];
-        try { localStorage.removeItem('employiq_user'); } catch {}
+        try { localStorage.removeItem('employiq_user'); } catch { }
         window.location.href = '/sign-in';
         return Promise.reject(refreshErr);
       } finally {
