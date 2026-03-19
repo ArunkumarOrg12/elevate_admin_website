@@ -46,3 +46,9 @@ export const QUERY_KEYS = {
   QUESTION_BANK: ['question-bank'],
   CYCLES: ['cycles'],
 };
+
+export const STUDENT_API = {
+  GET_ALL_STUDENTS: '/api/v1/student',
+  CREATE_STUDENT:   '/api/v1/student',
+  DEPARTMENTS:      '/api/v1/department',  // ← used by useGetDepartments
+};
