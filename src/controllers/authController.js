@@ -18,16 +18,14 @@ const authApi = {
     api.post(AUTH_URLS.REFRESH_TOKEN),
 };
 
-// ── Hooks ─────────────────────────────────────────────────────────────────────
-import { setCurrentUser, clearCurrentUser } from '../store/authStore';
+
 
 export function useLogin() {
   return useMutation({
     mutationFn: ({ email, password, role }) => authApi.login(email, password, role),
 
     onSuccess: (data) => {
-      setAccessToken(data.accessToken);
-      setCurrentUser(data.user);  // ← save user object (has college_id, role, etc.)
+      setAuthToken(data.accessToken);
     },
 
   });
@@ -38,8 +36,7 @@ export function useLogout() {
     mutationFn: authApi.logout,
 
     onSettled: () => {
-      setAccessToken(null);
-      clearCurrentUser();  // ← clear on logout
+      setAuthToken(null);
     },
 
   });
