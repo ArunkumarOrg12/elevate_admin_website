@@ -12,6 +12,14 @@ import RiskMonitor from './pages/RiskMonitor';
 import Reports from './pages/Reports';
 import Settings from './pages/Settings';
 import CollegeManagement from './pages/CollegeManagement';
+// Assessment sub-pages
+import Questions from './pages/assessments/Questions';
+import AddQuestion from './pages/assessments/AddQuestion';
+import QuestionDetail from './pages/assessments/QuestionDetail';
+import PaperSets from './pages/assessments/PaperSets';
+import QuestionBank from './pages/assessments/QuestionBank';
+import Cycles from './pages/assessments/Cycles';
+import CycleParticipants from './pages/assessments/CycleParticipants';
 
 export default function App() {
   return (
@@ -22,6 +30,13 @@ export default function App() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/students" element={<Students />} />
         <Route path="/assessments" element={<Assessments />} />
+        <Route path="/assessments/questions" element={<Questions />} />
+        <Route path="/assessments/questions/add" element={<AddQuestion />} />
+        <Route path="/assessments/questions/:id" element={<QuestionDetail />} />
+        <Route path="/assessments/paper-sets" element={<PaperSets />} />
+        <Route path="/assessments/bank" element={<QuestionBank />} />
+        <Route path="/assessments/cycles" element={<Cycles />} />
+        <Route path="/assessments/cycles/:id/participants" element={<CycleParticipants />} />
         <Route path="/departments" element={<Departments />} />
         <Route path="/analytics" element={<Analytics />} />
         <Route path="/risk-monitor" element={<RiskMonitor />} />
