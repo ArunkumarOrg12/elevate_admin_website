@@ -95,3 +95,19 @@ export {
   useUpdateCollege,
   useDeleteCollege,
 } from './collegesController';
+
+// ── Notifications hooks ───────────────────────────────────────────────────────
+export { default as notificationsApi } from './notificationsController';
+export {
+  useNotificationInbox,
+  useBroadcastNotification,
+  useMarkAllNotificationsRead,
+  useMarkNotificationRead,
+  useDeleteAllNotifications,
+  useDeleteNotification,
+  // Admin-only
+  useBroadcastHistory,
+  useAdminDeleteBroadcast,
+  useAdminDeleteAllBroadcasts,
+} from './notificationsController';
+

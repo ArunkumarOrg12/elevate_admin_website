@@ -28,6 +28,22 @@ export const ADMIN_PATHS = {
   CYCLES: '/api/v1/assessments/cycles',
 };
 
+export const NOTIFICATION_API = {
+  // ── User-scoped ──────────────────────────────────────────────────────────
+  INBOX:                    '/api/v1/notification/inbox',
+  BROADCAST:                '/api/v1/notification/broadcast',
+  READ_ALL:                 '/api/v1/notification/read-all',
+  READ_ONE:                 (id) => `/api/v1/notification/${id}/read`,
+  DELETE_ALL:               '/api/v1/notification',
+  DELETE_ONE:               (id) => `/api/v1/notification/${id}`,
+
+  // ── Admin-scoped (cascade deletes across ALL users) ───────────────────────
+  BROADCAST_HISTORY:        '/api/v1/notification/broadcast',          // GET
+  ADMIN_DELETE_ONE:         (id) => `/api/v1/notification/broadcast/${id}`, // DELETE — removes from every recipient
+  ADMIN_DELETE_ALL:         '/api/v1/notification/broadcast',          // DELETE — wipes all broadcasts for all users
+};
+
+
 
 
 export const QUERY_KEYS = {
@@ -45,6 +61,7 @@ export const QUERY_KEYS = {
   PAPER_SETS: ['paper-sets'],
   QUESTION_BANK: ['question-bank'],
   CYCLES: ['cycles'],
+  NOTIFICATIONS: ['notifications'],
 };
 
 export const STUDENT_API = {
