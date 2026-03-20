@@ -5,7 +5,6 @@ import {
   Dialog, DialogContent, DialogHeader,
   DialogTitle, DialogDescription,
 } from "../components/ui/dialog";
- final_version
 
 import {
   User, BookOpen, Calendar, Hash,
@@ -229,6 +228,5 @@ export default function StudentDetailDialog({ open, onOpenChange, student }) {
       </DialogContent>
     </Dialog>
   );
- final_version
 }
 
