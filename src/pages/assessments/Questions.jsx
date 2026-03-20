@@ -176,8 +176,8 @@ export default function Questions() {
                         variant="ghost"
                         size="sm"
                         className="h-7 w-7 p-0 text-gray-500 hover:text-amber-600"
-                        onClick={() => navigate(`/assessments/questions/${q.id}?mode=edit`)}
-                        title="Edit"
+                        onClick={() => navigate(`/assessments/questions/${q.id}/edit`)}
+                        title="Edit Question"
                       >
                         <Edit2 size={14} />
                       </Button>
