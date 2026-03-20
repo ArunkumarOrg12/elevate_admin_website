@@ -26,6 +26,10 @@ export const ADMIN_PATHS = {
   PAPER_SETS: '/api/v1/assessments/paper-sets',
   QUESTION_BANK: '/api/v1/assessments/bank',
   CYCLES: '/api/v1/assessments/cycles',
+  GET_ALL_ADMINS: "/api/v1/auth/all-admins",
+  DELETE_ADMIN: (id) => `/api/v1/auth/admins/${id}`,
+  CREATE_ADMIN: "/api/v1/auth/register",   // ← adjust to your actual endpoint
+  COLLEGES: "/api/v1/college/colleges",  
 };
 
 

@@ -35,6 +35,7 @@ const NAV_ITEMS = [
   { icon: FileText, label: 'Reports', path: '/reports', roles: [ROLES.SUPER_ADMIN, ROLES.COLLEGE_ADMIN] },
   { icon: Settings, label: 'Settings', path: '/settings', roles: [ROLES.SUPER_ADMIN, ROLES.COLLEGE_ADMIN] },
   { icon: Building, label: 'College Management', path: '/college-management', roles: [ROLES.SUPER_ADMIN] },
+  { icon: Users, label: 'Admins', path: '/admins', roles: [ROLES.SUPER_ADMIN] },
 ];
 
 export default function Sidebar() {
