@@ -5,7 +5,7 @@ import { ADMIN_PATHS, QUERY_KEYS } from '../constants/apiUrlConstant';
 // ── API functions ─────────────────────────────────────────────────────────────
 const dashboardApi = {
   getStats: (params) =>
-    api.get(ADMIN_PATHS.DASHBOARD, { params }),
+    api.get(`${ADMIN_PATHS.DASHBOARD}/stats`, { params }),
 
   getEITrends: (params) =>
     api.get(`${ADMIN_PATHS.DASHBOARD}/ei-trends`, { params }),

@@ -12,15 +12,15 @@ export const AUTH_URLS = {
 
 // Path-only constants for admin routes — used by the api instance (which already has baseURL set)
 export const ADMIN_PATHS = {
-  DASHBOARD: '/api/admin/dashboard',
-  STUDENTS: '/api/admin/students',
-  ASSESSMENTS: '/api/admin/assessments',
+  DASHBOARD: '/api/v1/dashboard',
+  STUDENTS: '/api/v1/student',
+  ASSESSMENTS: '/api/v1/assessments',
   DEPARTMENTS: '/api/v1/department/departments',
-  ANALYTICS: '/api/admin/analytics',
-  RISK_MONITOR: '/api/admin/risk-monitor',
-  REPORTS: '/api/admin/reports',
-  SETTINGS: '/api/admin/settings',
-  COLLEGES: '/api/admin/colleges',
+  ANALYTICS: '/api/v1/analytics',
+  RISK_MONITOR: '/api/v1/risk-monitor',
+  REPORTS: '/api/v1/reports',
+  SETTINGS: '/api/v1/settings',
+  COLLEGES: '/api/v1/college/colleges',
   // Assessment sub-resources
   QUESTIONS: '/api/v1/assessments/questions',
   PAPER_SETS: '/api/v1/assessments/paper-sets',

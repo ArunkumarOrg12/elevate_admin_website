@@ -1,13 +1,15 @@
+import { useState } from "react";
 import {
   Dialog, DialogContent, DialogHeader,
   DialogTitle, DialogDescription,
 } from "../components/ui/dialog";
-import { Badge } from "../components/ui/badge";
 import {
   User, BookOpen, Calendar, Hash,
   GraduationCap, Building2, ShieldCheck, Mail,
 } from "lucide-react";
 import { getEIColor, getEIBgColor } from "../utils/helpers";
+import StatusBadge from "./common/StatusBadge";
+import TopicWeaknessPanel from "./dashboard/TopicWeaknessPanel";
 
 function InfoRow({ icon: Icon, label, value }) {
   if (!value && value !== 0) return null;
@@ -33,24 +35,64 @@ function StatPill({ label, value, color }) {
   );
 }
 
-function StatusBadgeLocal({ status }) {
-  const map = {
-    "Ready":      "bg-emerald-100 text-emerald-700",
-    "Developing": "bg-amber-100 text-amber-700",
-    "At Risk":    "bg-red-100 text-red-700",
-  };
+const SECTIONS = [
+  { key: 'aptitude_score',      label: 'Aptitude',      weight: '30%' },
+  { key: 'technical_score',     label: 'Technical',     weight: '35%' },
+  { key: 'behavioral_score',    label: 'Behavioral',    weight: '20%' },
+  { key: 'communication_score', label: 'Communication', weight: '15%' },
+];
+
+function SectionBreakdown({ student }) {
+  const hasAny = SECTIONS.some((s) => student[s.key] !== null && student[s.key] !== undefined);
+  if (!hasAny) return null;
+
   return (
-    <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${map[status] || "bg-gray-100 text-gray-600"}`}>
-      {status}
-    </span>
+    <div className="px-8 py-4 border-b border-gray-100">
+      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Section Breakdown</p>
+      <div className="space-y-3">
+        {SECTIONS.map((s) => {
+          const score = student[s.key];
+          if (score === null || score === undefined) return null;
+          return (
+            <div key={s.key}>
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs text-gray-600">
+                  {s.label} <span className="text-gray-400">({s.weight})</span>
+                </span>
+                <span className={`text-xs font-bold ${getEIColor(score)}`}>{score}</span>
+              </div>
+              <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all ${getEIBgColor(score)}`}
+                  style={{ width: `${score}%` }}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
 export default function StudentDetailDialog({ open, onOpenChange, student }) {
+  const [topicOpen, setTopicOpen] = useState(false);
+
   if (!student) return null;
 
   const initials = student.name
     .split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
+
+  const velocityDisplay = () => {
+    if (student.velocity === null || student.velocity === undefined) {
+      return <span className="text-xs text-gray-400">First Assessment</span>;
+    }
+    return (
+      <span className={`text-xs font-semibold ${student.velocity >= 0 ? "text-emerald-600" : "text-red-500"}`}>
+        {student.velocity >= 0 ? "+" : ""}{student.velocity} pts
+      </span>
+    );
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -71,7 +113,7 @@ export default function StudentDetailDialog({ open, onOpenChange, student }) {
                 {student.roll} · {student.dept} · {student.year}
               </p>
               <div className="mt-2">
-                <StatusBadgeLocal status={student.status} />
+                <StatusBadge riskCategory={student.riskCategory} />
               </div>
             </div>
           </div>
@@ -116,23 +158,47 @@ export default function StudentDetailDialog({ open, onOpenChange, student }) {
             />
           </div>
           <div className="flex items-center justify-between mt-1.5">
-            <span className="text-xs text-gray-400">Velocity</span>
-            <span className={`text-xs font-semibold ${student.velocity >= 0 ? "text-emerald-600" : "text-red-500"}`}>
-              {student.velocity >= 0 ? "+" : ""}{student.velocity} this period
-            </span>
+            <span className="text-xs text-gray-400">Growth Velocity</span>
+            {velocityDisplay()}
           </div>
         </div>
 
+        {/* ── Section Breakdown ─────────────────────────────── */}
+        <SectionBreakdown student={student} />
+
+        {/* ── Topic Analysis (collapsible) ──────────────────── */}
+        {student.topic_analysis && (
+          <div className="border-b border-gray-100">
+            <button
+              onClick={() => setTopicOpen((v) => !v)}
+              className="w-full px-8 py-3 flex items-center justify-between text-left hover:bg-gray-50 transition-colors"
+            >
+              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                Topic Analysis
+              </span>
+              <span className="text-xs text-indigo-500">{topicOpen ? "▲ Hide" : "▼ Show"}</span>
+            </button>
+            {topicOpen && (
+              <div className="px-8 pb-4">
+                <TopicWeaknessPanel
+                  topicAnalysis={student.topic_analysis}
+                  studentName={student.name}
+                />
+              </div>
+            )}
+          </div>
+        )}
+
         {/* ── Info grid ─────────────────────────────────────── */}
         <div className="px-8 py-6 grid grid-cols-2 gap-5">
-          <InfoRow icon={Hash}         label="Roll Number"      value={student.roll} />
-          <InfoRow icon={Building2}    label="Department"       value={student.dept} />
+          <InfoRow icon={Hash}          label="Roll Number"     value={student.roll} />
+          <InfoRow icon={Building2}     label="Department"      value={student.dept} />
           <InfoRow icon={GraduationCap} label="Batch Year"      value={student.year} />
-          <InfoRow icon={BookOpen}     label="Semester"         value={student.current_semester ? `Semester ${student.current_semester}` : undefined} />
-          <InfoRow icon={User}         label="Gender"           value={student.gender} />
-          <InfoRow icon={ShieldCheck}  label="Category"         value={student.category} />
-          <InfoRow icon={Calendar}     label="Date of Birth"    value={student.date_of_birth} />
-          <InfoRow icon={Mail}         label="Admission Score"  value={student.admission_score ?? undefined} />
+          <InfoRow icon={BookOpen}      label="Semester"        value={student.current_semester ? `Semester ${student.current_semester}` : undefined} />
+          <InfoRow icon={User}          label="Gender"          value={student.gender} />
+          <InfoRow icon={ShieldCheck}   label="Category"        value={student.category} />
+          <InfoRow icon={Calendar}      label="Date of Birth"   value={student.date_of_birth} />
+          <InfoRow icon={Mail}          label="Admission Score" value={student.admission_score ?? undefined} />
         </div>
 
         {/* ── Footer ────────────────────────────────────────── */}
