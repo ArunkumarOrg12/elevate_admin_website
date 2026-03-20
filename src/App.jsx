@@ -12,6 +12,7 @@ import RiskMonitor from './pages/RiskMonitor';
 import Reports from './pages/Reports';
 import Settings from './pages/Settings';
 import CollegeManagement from './pages/CollegeManagement';
+import Notifications from './pages/Notifications';
 // Assessment sub-pages
 import Questions from './pages/assessments/Questions';
 import AddQuestion from './pages/assessments/AddQuestion';
@@ -44,6 +45,7 @@ export default function App() {
         <Route path="/risk-monitor" element={<RiskMonitor />} />
         <Route path="/reports" element={<Reports />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/notifications" element={<Notifications />} />
         <Route path="/college-management" element={
           <RoleGuard allowedRoles={[ROLES.SUPER_ADMIN]} fallback={<Navigate to="/dashboard" replace />}>
             <CollegeManagement />

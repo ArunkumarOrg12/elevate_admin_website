@@ -119,7 +119,13 @@ export default function Header() {
       <div className="flex items-center gap-2 ml-auto flex-shrink-0">
         {/* Notifications */}
         <div className="relative">
-          <Button variant="ghost" size="icon" className="text-gray-500">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-gray-500"
+            onClick={() => navigate('/notifications')}
+            aria-label="View notifications"
+          >
             <Bell size={20} />
           </Button>
           <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center pointer-events-none">2</span>

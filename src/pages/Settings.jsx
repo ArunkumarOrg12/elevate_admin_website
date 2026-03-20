@@ -5,11 +5,10 @@ import { ROLES } from '../constants/roles';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
-import { INSTITUTION_SETTINGS, NOTIFICATION_SETTINGS, EI_THRESHOLDS } from '../data/mockData';
+import { INSTITUTION_SETTINGS, EI_THRESHOLDS } from '../data/mockData';
 
 const ALL_TABS = [
   { id: 'general', label: 'General', roles: [ROLES.SUPER_ADMIN, ROLES.COLLEGE_ADMIN] },
-  { id: 'notifications', label: 'Notifications', roles: [ROLES.SUPER_ADMIN, ROLES.COLLEGE_ADMIN] },
   { id: 'thresholds', label: 'EI Thresholds', roles: [ROLES.SUPER_ADMIN] },
   { id: 'users', label: 'User Management', roles: [ROLES.SUPER_ADMIN] },
   { id: 'security', label: 'Security', roles: [ROLES.SUPER_ADMIN] },
@@ -93,28 +92,7 @@ export default function Settings() {
             </>
           )}
 
-          {activeTab === 'notifications' && (
-            <Card className="p-5">
-              <h3 className="font-semibold text-gray-900 mb-4">Notification Preferences</h3>
-              <div className="space-y-4">
-                {Object.entries(NOTIFICATION_SETTINGS).map(([key, val]) => {
-                  const labels = { emailAlerts: 'Email Alerts', riskThresholdAlerts: 'Risk Threshold Alerts', assessmentReminders: 'Assessment Reminders', weeklyDigest: 'Weekly Digest', placementUpdates: 'Placement Updates' };
-                  return (
-                    <div key={key} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
-                      <span className="text-sm text-gray-700">{labels[key]}</span>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" defaultChecked={val} className="sr-only peer" />
-                        <div className="w-10 h-6 bg-gray-200 peer-focus:ring-2 peer-focus:ring-indigo-500 rounded-full peer peer-checked:bg-indigo-600 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-4" />
-                      </label>
-                    </div>
-                  );
-                })}
-              </div>
-              <Button size="sm" className="mt-4">
-                <Save size={14} /> Save Preferences
-              </Button>
-            </Card>
-          )}
+
 
           {activeTab === 'thresholds' && (
             <Card className="p-5">

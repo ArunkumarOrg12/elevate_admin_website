@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Users, ClipboardList, Building2,
   BarChart3, AlertTriangle, FileText, Settings, Building,
   GraduationCap, ChevronLeft, ChevronRight, LogOut, X,
-  ChevronDown, HelpCircle, PlusCircle, LibraryBig, Layers, RefreshCw, LayoutList,
+  ChevronDown, HelpCircle, PlusCircle, LibraryBig, Layers, RefreshCw, LayoutList, Bell,
 } from 'lucide-react';
 import { SidebarContext } from '../../context/SidebarContext';
 import { useAuth } from '../../hooks/useAuth';
@@ -33,6 +33,7 @@ const NAV_ITEMS = [
   { icon: BarChart3, label: 'Analytics', path: '/analytics', roles: [ROLES.SUPER_ADMIN, ROLES.COLLEGE_ADMIN] },
   { icon: AlertTriangle, label: 'Risk Monitor', path: '/risk-monitor', badge: '357', badgeDanger: true, roles: [ROLES.SUPER_ADMIN, ROLES.COLLEGE_ADMIN] },
   { icon: FileText, label: 'Reports', path: '/reports', roles: [ROLES.SUPER_ADMIN, ROLES.COLLEGE_ADMIN] },
+  { icon: Bell, label: 'Notifications', path: '/notifications', roles: [ROLES.SUPER_ADMIN, ROLES.COLLEGE_ADMIN] },
   { icon: Settings, label: 'Settings', path: '/settings', roles: [ROLES.SUPER_ADMIN, ROLES.COLLEGE_ADMIN] },
   { icon: Building, label: 'College Management', path: '/college-management', roles: [ROLES.SUPER_ADMIN] },
 ];
