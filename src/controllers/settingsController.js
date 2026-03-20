@@ -9,6 +9,12 @@ const settingsApi = {
 
   update: (data) =>
     api.put(ADMIN_PATHS.SETTINGS, data),
+
+  updatePassword: (data) =>
+    api.put(`${ADMIN_PATHS.SETTINGS}/password`, data),
+
+  updateNotifications: (data) =>
+    api.put(`${ADMIN_PATHS.SETTINGS}/notifications`, data),
 };
 
 // ── Hooks ─────────────────────────────────────────────────────────────────────
@@ -23,6 +29,20 @@ export function useUpdateSettings() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: settingsApi.update,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: QUERY_KEYS.SETTINGS }),
+  });
+}
+
+export function useUpdatePassword() {
+  return useMutation({
+    mutationFn: settingsApi.updatePassword,
+  });
+}
+
+export function useUpdateNotifications() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: settingsApi.updateNotifications,
     onSuccess: () => queryClient.invalidateQueries({ queryKey: QUERY_KEYS.SETTINGS }),
   });
 }
