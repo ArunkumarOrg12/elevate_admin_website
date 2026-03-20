@@ -1,5 +1,4 @@
 // ── Default exports (raw API functions) ───────────────────────────────────────
-export { default as authApi } from './authController';
 export { default as dashboardApi } from './dashboardController';
 export { default as studentsApi } from './studentsController';
 export { default as assessmentsApi } from './assessmentsController';
@@ -26,9 +25,9 @@ export {
 
 // ── Students hooks ────────────────────────────────────────────────────────────
 export {
-  useStudents,
-  useStudent,
-  useStudentEIHistory,
+  useGetAllStudents,
+  useGetStudentById,
+  useGetDepartments,
   useCreateStudent,
   useUpdateStudent,
   useDeleteStudent,
@@ -96,3 +95,19 @@ export {
   useUpdateCollege,
   useDeleteCollege,
 } from './collegesController';
+
+// ── Notifications hooks ───────────────────────────────────────────────────────
+export { default as notificationsApi } from './notificationsController';
+export {
+  useNotificationInbox,
+  useBroadcastNotification,
+  useMarkAllNotificationsRead,
+  useMarkNotificationRead,
+  useDeleteAllNotifications,
+  useDeleteNotification,
+  // Admin-only
+  useBroadcastHistory,
+  useAdminDeleteBroadcast,
+  useAdminDeleteAllBroadcasts,
+} from './notificationsController';
+

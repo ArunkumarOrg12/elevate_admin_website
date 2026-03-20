@@ -12,21 +12,37 @@ export const AUTH_URLS = {
 
 // Path-only constants for admin routes — used by the api instance (which already has baseURL set)
 export const ADMIN_PATHS = {
-  DASHBOARD: '/api/admin/dashboard',
-  STUDENTS: '/api/admin/students',
-  ASSESSMENTS: '/api/admin/assessments',
-  DEPARTMENTS: '/api/admin/departments',
-  ANALYTICS: '/api/admin/analytics',
-  RISK_MONITOR: '/api/admin/risk-monitor',
-  REPORTS: '/api/admin/reports',
-  SETTINGS: '/api/admin/settings',
-  COLLEGES: '/api/admin/colleges',
+  DASHBOARD: '/api/v1/dashboard',
+  STUDENTS: '/api/v1/student',
+  ASSESSMENTS: '/api/v1/assessments',
+  DEPARTMENTS: '/api/v1/department/departments',
+  ANALYTICS: '/api/v1/analytics',
+  RISK_MONITOR: '/api/v1/risk-monitor',
+  REPORTS: '/api/v1/reports',
+  SETTINGS: '/api/v1/settings',
+  COLLEGES: '/api/v1/college/colleges',
   // Assessment sub-resources
   QUESTIONS: '/api/v1/assessments/questions',
   PAPER_SETS: '/api/v1/assessments/paper-sets',
   QUESTION_BANK: '/api/v1/assessments/bank',
   CYCLES: '/api/v1/assessments/cycles',
 };
+
+export const NOTIFICATION_API = {
+  // ── User-scoped ──────────────────────────────────────────────────────────
+  INBOX:                    '/api/v1/notification/inbox',
+  BROADCAST:                '/api/v1/notification/broadcast',
+  READ_ALL:                 '/api/v1/notification/read-all',
+  READ_ONE:                 (id) => `/api/v1/notification/${id}/read`,
+  DELETE_ALL:               '/api/v1/notification',
+  DELETE_ONE:               (id) => `/api/v1/notification/${id}`,
+
+  // ── Admin-scoped (cascade deletes across ALL users) ───────────────────────
+  BROADCAST_HISTORY:        '/api/v1/notification/broadcast',          // GET
+  ADMIN_DELETE_ONE:         (id) => `/api/v1/notification/broadcast/${id}`, // DELETE — removes from every recipient
+  ADMIN_DELETE_ALL:         '/api/v1/notification/broadcast',          // DELETE — wipes all broadcasts for all users
+};
+
 
 
 
@@ -45,6 +61,7 @@ export const QUERY_KEYS = {
   PAPER_SETS: ['paper-sets'],
   QUESTION_BANK: ['question-bank'],
   CYCLES: ['cycles'],
+  NOTIFICATIONS: ['notifications'],
 };
 
 export const STUDENT_API = {

@@ -3,7 +3,9 @@ import {
   Download, SlidersHorizontal, Search,
   ChevronUp, ChevronDown, Plus, Eye, Pencil, Trash2,
 } from "lucide-react";
-import { Users, UserCheck, BookOpen, AlertTriangle } from "lucide-react";
+
+import { Users, UserCheck, TrendingUp, AlertTriangle } from "lucide-react";
+
 import StatCard from "../components/common/StatCard";
 import StatusBadge from "../components/common/StatusBadge";
 import { Button } from "@/components/ui/button";
@@ -13,14 +15,24 @@ import {
   Table, TableHeader, TableBody,
   TableHead, TableRow, TableCell,
 } from "@/components/ui/table";
-import { getEIColor, getEIBgColor, formatDate } from "../utils/helpers";
+
+import { getEIColor, getEIBgColor, getEICategory, formatDate } from "../utils/helpers";
+
 import { useGetAllStudents, useDeleteStudent } from "../controllers/studentsController";
 import AddStudentDialog from "../components/AddStudentPopUp";
 import StudentDetailDialog from "../components/studentDetailDialog";
 import { useAuth } from "../hooks/useAuth";
 
-const DEPTS    = ["All", "CSE", "ECE", "MECH", "CIVIL", "IT", "EEE", "MBA", "MCA"];
-const STATUSES = ["All", "Ready", "Developing", "At Risk"];
+
+const DEPTS = ["All", "CSE", "ECE", "MECH", "CIVIL", "IT", "EEE", "MBA", "MCA"];
+const STATUSES = [
+  { value: "All",             label: "All" },
+  { value: "INDUSTRY_READY",  label: "Industry Ready" },
+  { value: "PLACEMENT_READY", label: "Placement Ready" },
+  { value: "MODERATE",        label: "Moderate" },
+  { value: "HIGH_RISK",       label: "High Risk" },
+];
+
 
 function SortIcon({ field, sortField, sortDir }) {
   if (sortField !== field) return <ChevronUp size={12} className="text-gray-300" />;
@@ -48,28 +60,40 @@ export default function Students() {
     ? responseData
     : (responseData?.data ?? []);
 
-  const students = rawStudents.map((u) => ({
-    id:             u.id,
-    name:           `${u.first_name} ${u.last_name}`,
-    roll:           u.student?.enrollment_number  || "N/A",
-    dept:           u.student?.department?.name   || "N/A",
-    year:           u.student?.batch_year         || "N/A",
-    status:         u.student?.status             ?? "Ready",
-    eiScore:        u.student?.eiScore            ?? 0,
-    percentile:     u.student?.percentile         ?? 0,
-    cgpa:           u.student?.cgpa               ?? 0,
-    consistency:    u.student?.consistency        ?? 0,
-    velocity:       u.student?.velocity           ?? 0,
-    // Extra fields shown in detail popup
-    gender:           u.student?.gender,
-    category:         u.student?.category,
-    date_of_birth:    u.student?.date_of_birth,
-    admission_score:  u.student?.admission_score,
-    current_semester: u.student?.current_semester,
-    lastAssessment: u.student?.lastAssessment
-      ? new Date(u.student.lastAssessment)
-      : new Date(),
-  }));
+
+  const students = rawStudents.map((u) => {
+    const ei = u.student?.ei_score ?? u.student?.eiScore ?? 0;
+    const riskCategory = u.student?.risk_category ?? getEICategory(ei);
+    return {
+      id:             u.id,
+      name:           `${u.first_name} ${u.last_name}`,
+      roll:           u.student?.enrollment_number  || "N/A",
+      dept:           u.student?.department?.name   || "N/A",
+      year:           u.student?.batch_year         || "N/A",
+      riskCategory,
+      eiScore:        ei,
+      percentile:     u.student?.index_percentile   ?? u.student?.percentile    ?? 0,
+      cgpa:           u.student?.cgpa               ?? 0,
+      consistency:    u.student?.consistency        ?? 0,
+      velocity:       u.student?.growth_velocity    ?? u.student?.velocity      ?? null,
+      // Section scores
+      aptitude_score:      u.student?.aptitude_score      ?? null,
+      technical_score:     u.student?.technical_score     ?? null,
+      behavioral_score:    u.student?.behavioral_score    ?? null,
+      communication_score: u.student?.communication_score ?? null,
+      topic_analysis:      u.student?.topic_analysis      ?? null,
+      // Extra fields shown in detail popup
+      gender:           u.student?.gender,
+      category:         u.student?.category,
+      date_of_birth:    u.student?.date_of_birth,
+      admission_score:  u.student?.admission_score,
+      current_semester: u.student?.current_semester,
+      lastAssessment: u.student?.lastAssessment
+        ? new Date(u.student.lastAssessment)
+        : new Date(),
+    };
+  });
+
 
   const handleSort = (field) => {
     if (sortField === field) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
@@ -93,8 +117,10 @@ export default function Students() {
     const q = search.toLowerCase();
     if (q && !s.name.toLowerCase().includes(q) && !(s.roll || "").toLowerCase().includes(q))
       return false;
-    if (dept   !== "All" && s.dept   !== dept)   return false;
-    if (status !== "All" && s.status !== status) return false;
+
+    if (dept   !== "All" && s.dept         !== dept)         return false;
+    if (status !== "All" && s.riskCategory !== status)      return false;
+
     return true;
   });
 
@@ -110,10 +136,12 @@ export default function Students() {
   const paged = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
 
   const counts = {
-    total:      students.length,
-    ready:      students.filter((s) => s.status === "Ready").length,
-    developing: students.filter((s) => s.status === "Developing").length,
-    atRisk:     students.filter((s) => s.status === "At Risk").length,
+
+    total:         students.length,
+    industryReady: students.filter((s) => s.riskCategory === "INDUSTRY_READY").length,
+    placementReady:students.filter((s) => s.riskCategory === "PLACEMENT_READY").length,
+    highRisk:      students.filter((s) => s.riskCategory === "HIGH_RISK").length,
+
   };
 
   const COLS = [
@@ -174,10 +202,12 @@ export default function Students() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
-        <StatCard label="TOTAL STUDENTS" value={counts.total}      icon={Users}         accentColor="blue"    />
-        <StatCard label="CAMPUS READY"   value={counts.ready}      icon={UserCheck}     accentColor="emerald" description="EI ≥ 70"  />
-        <StatCard label="DEVELOPING"     value={counts.developing} icon={BookOpen}      accentColor="amber"   description="EI 50-69" />
-        <StatCard label="AT RISK"        value={counts.atRisk}     icon={AlertTriangle} accentColor="red"     description="EI < 50"  />
+
+        <StatCard label="TOTAL STUDENTS"   value={counts.total}          icon={Users}         accentColor="blue"    />
+        <StatCard label="INDUSTRY READY"   value={counts.industryReady}  icon={UserCheck}     accentColor="emerald" description="EI ≥ 80"  />
+        <StatCard label="PLACEMENT READY"  value={counts.placementReady} icon={TrendingUp}    accentColor="indigo"  description="EI 60–79" />
+        <StatCard label="HIGH RISK"        value={counts.highRisk}       icon={AlertTriangle} accentColor="red"     description="EI < 40"  />
+
       </div>
 
       {/* Filters */}
@@ -200,16 +230,18 @@ export default function Students() {
             >
               {DEPTS.map((d) => <option key={d}>{d}</option>)}
             </select>
-            <div className="flex gap-1">
+
+            <div className="flex gap-1 flex-wrap">
               {STATUSES.map((s) => (
                 <Button
-                  key={s}
-                  variant={status === s ? "default" : "ghost"}
+                  key={s.value}
+                  variant={status === s.value ? "default" : "ghost"}
                   size="sm"
-                  onClick={() => { setStatus(s); setPage(1); }}
-                  className={status !== s ? "bg-gray-100 text-gray-600 hover:bg-gray-200" : ""}
+                  onClick={() => { setStatus(s.value); setPage(1); }}
+                  className={status !== s.value ? "bg-gray-100 text-gray-600 hover:bg-gray-200" : ""}
+
                 >
-                  {s}
+                  {s.label}
                 </Button>
               ))}
             </div>
@@ -281,12 +313,18 @@ export default function Students() {
 
                 {/* Velocity */}
                 <TableCell>
-                  <span className={`text-sm font-medium ${s.velocity >= 0 ? "text-emerald-600" : "text-red-600"}`}>
-                    {s.velocity >= 0 ? "+" : ""}{s.velocity}
-                  </span>
+
+                  {s.velocity === null ? (
+                    <span className="text-xs text-gray-400">First Assessment</span>
+                  ) : (
+                    <span className={`text-sm font-medium ${s.velocity >= 0 ? "text-emerald-600" : "text-red-600"}`}>
+                      {s.velocity >= 0 ? "+" : ""}{s.velocity} pts
+                    </span>
+                  )}
                 </TableCell>
 
-                <TableCell><StatusBadge status={s.status} /></TableCell>
+                <TableCell><StatusBadge riskCategory={s.riskCategory} /></TableCell>
+
                 <TableCell className="text-sm text-gray-500">{formatDate(s.lastAssessment)}</TableCell>
 
                 {/* Actions */}

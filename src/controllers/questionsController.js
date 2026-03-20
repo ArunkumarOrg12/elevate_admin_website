@@ -10,12 +10,22 @@ const questionsApi = {
   create: (data) => api.post(ADMIN_PATHS.QUESTIONS, data),
   update: (id, data) => api.put(`${ADMIN_PATHS.QUESTIONS}/${id}`, data),
   remove: (id) => api.delete(`${ADMIN_PATHS.QUESTIONS}/${id}`),
+  // Backend registers these as PUT — used by both AddQuestion (initial) and EditQuestion (update)
   uploadQuestionImage: (id, formData) =>
-    api.post(`${ADMIN_PATHS.QUESTIONS.replace('/questions', '')}/upload/${id}/question-image`, formData, {
+    api.put(`${ADMIN_PATHS.QUESTIONS.replace('/questions', '')}/upload/${id}/question-image`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     }),
   uploadOptionImages: (id, formData) =>
-    api.post(`${ADMIN_PATHS.QUESTIONS.replace('/questions', '')}/upload/${id}/option-image`, formData, {
+    api.put(`${ADMIN_PATHS.QUESTIONS.replace('/questions', '')}/upload/${id}/option-image`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
+  // Aliases used by EditQuestion hooks (same endpoint)
+  updateQuestionImage: (id, formData) =>
+    api.put(`${ADMIN_PATHS.QUESTIONS.replace('/questions', '')}/upload/${id}/question-image`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
+  updateOptionImages: (id, formData) =>
+    api.put(`${ADMIN_PATHS.QUESTIONS.replace('/questions', '')}/upload/${id}/option-image`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     }),
 };
@@ -41,9 +51,13 @@ const cyclesApi = {
   getAll: () => api.get(ADMIN_PATHS.CYCLES),
   getById: (id) => api.get(`${ADMIN_PATHS.CYCLES}/${id}`),
   create: (data) => api.post(ADMIN_PATHS.CYCLES, data),
+  remove: (id) => api.delete(`${ADMIN_PATHS.CYCLES}/${id}`),
   changeStatus: (id, data) => api.patch(`${ADMIN_PATHS.CYCLES}/${id}/status`, data),
+  publish: (id) => api.post(`${ADMIN_PATHS.CYCLES}/${id}/publish`),
+  unpublish: (id) => api.post(`${ADMIN_PATHS.CYCLES}/${id}/unpublish`),
   getResults: (id) => api.get(`${ADMIN_PATHS.CYCLES}/${id}/results`),
   getLeaderboard: (id) => api.get(`${ADMIN_PATHS.CYCLES}/${id}/leaderboard`),
+  getParticipants: (id) => api.get(`${ADMIN_PATHS.CYCLES}/${id}/participants`),
 };
 
 // ── Question Hooks ─────────────────────────────────────────────────────────────
@@ -82,6 +96,49 @@ export function useUpdateQuestion() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, ...data }) => questionsApi.update(id, data),
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.QUESTIONS });
+      queryClient.invalidateQueries({ queryKey: [...QUERY_KEYS.QUESTIONS, id] });
+    },
+  });
+}
+
+export function useUpdateQuestionImage() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, formData }) => questionsApi.updateQuestionImage(id, formData),
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: [...QUERY_KEYS.QUESTIONS, id] });
+    },
+  });
+}
+
+export function useUpdateOptionImages() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, formData }) => questionsApi.updateOptionImages(id, formData),
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: [...QUERY_KEYS.QUESTIONS, id] });
+    },
+  });
+}
+
+// Used by AddQuestion after creation — same PUT endpoints, also invalidates the list
+export function useUploadQuestionImage() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, formData }) => questionsApi.uploadQuestionImage(id, formData),
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.QUESTIONS });
+      queryClient.invalidateQueries({ queryKey: [...QUERY_KEYS.QUESTIONS, id] });
+    },
+  });
+}
+
+export function useUploadOptionImages() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, formData }) => questionsApi.uploadOptionImages(id, formData),
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.QUESTIONS });
       queryClient.invalidateQueries({ queryKey: [...QUERY_KEYS.QUESTIONS, id] });
@@ -170,11 +227,12 @@ export function useCycles() {
   });
 }
 
-export function useCycle(id) {
+export function useCycle(id, options = {}) {
   return useQuery({
     queryKey: [...QUERY_KEYS.CYCLES, id],
     queryFn: () => cyclesApi.getById(id),
     enabled: !!id,
+    ...options,
   });
 }
 
@@ -194,6 +252,39 @@ export function useChangeCycleStatus() {
   });
 }
 
+export function useDeleteCycle() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id) => cyclesApi.remove(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: QUERY_KEYS.CYCLES }),
+  });
+}
+
+export function usePublishCycle() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id) => cyclesApi.publish(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: QUERY_KEYS.CYCLES }),
+  });
+}
+
+export function useUnpublishCycle() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id) => cyclesApi.unpublish(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: QUERY_KEYS.CYCLES }),
+  });
+}
+
+export function useCycleParticipants(id, options = {}) {
+  return useQuery({
+    queryKey: [...QUERY_KEYS.CYCLES, id, 'participants'],
+    queryFn: () => cyclesApi.getParticipants(id),
+    enabled: !!id,
+    ...options,
+  });
+}
+
 export function useCycleResults(id) {
   return useQuery({
     queryKey: [...QUERY_KEYS.CYCLES, id, 'results'],
@@ -202,11 +293,12 @@ export function useCycleResults(id) {
   });
 }
 
-export function useCycleLeaderboard(id) {
+export function useCycleLeaderboard(id, options = {}) {
   return useQuery({
     queryKey: [...QUERY_KEYS.CYCLES, id, 'leaderboard'],
     queryFn: () => cyclesApi.getLeaderboard(id),
     enabled: !!id,
+    ...options,
   });
 }
 

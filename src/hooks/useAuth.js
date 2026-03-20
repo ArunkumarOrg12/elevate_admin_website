@@ -8,6 +8,7 @@ export function useAuth() {
 
   return {
     ...ctx,
+    isLoading: ctx.loading,
     isSuperAdmin: ctx.user?.role === ROLES.SUPER_ADMIN,
     isCollegeAdmin: ctx.user?.role === ROLES.COLLEGE_ADMIN,
   };
