@@ -4,19 +4,18 @@ import {
   LayoutDashboard, Users, ClipboardList, Building2,
   BarChart3, AlertTriangle, FileText, Settings, Building,
   GraduationCap, ChevronLeft, ChevronRight, LogOut, X,
-  ChevronDown, HelpCircle, PlusCircle, LibraryBig, Layers, RefreshCw, LayoutList, Bell,
+  ChevronDown, HelpCircle, PlusCircle, LibraryBig, Layers, RefreshCw, Bell,
 } from 'lucide-react';
 import { SidebarContext } from '../../context/SidebarContext';
 import { useAuth } from '../../hooks/useAuth';
 import { ROLES } from '../../constants/roles';
 
 const ASSESSMENT_CHILDREN = [
-  { icon: LayoutList,  label: 'Overview',      path: '/assessments',            roles: [ROLES.SUPER_ADMIN, ROLES.COLLEGE_ADMIN], exact: true },
+  { icon: RefreshCw,   label: 'Cycles',        path: '/assessments',            roles: [ROLES.SUPER_ADMIN, ROLES.COLLEGE_ADMIN], exact: true },
   { icon: HelpCircle,  label: 'Questions',     path: '/assessments/questions',  roles: [ROLES.SUPER_ADMIN, ROLES.COLLEGE_ADMIN] },
   { icon: PlusCircle,  label: 'Add Question',  path: '/assessments/questions/add', roles: [ROLES.SUPER_ADMIN, ROLES.COLLEGE_ADMIN] },
   { icon: Layers,      label: 'Paper Sets',    path: '/assessments/paper-sets', roles: [ROLES.SUPER_ADMIN, ROLES.COLLEGE_ADMIN] },
   { icon: LibraryBig,  label: 'Question Bank', path: '/assessments/bank',       roles: [ROLES.SUPER_ADMIN, ROLES.COLLEGE_ADMIN] },
-  { icon: RefreshCw,   label: 'Cycles',        path: '/assessments/cycles',     roles: [ROLES.SUPER_ADMIN, ROLES.COLLEGE_ADMIN] },
 ];
 
 const NAV_ITEMS = [
@@ -32,7 +31,7 @@ const NAV_ITEMS = [
   { icon: Building2, label: 'Departments', path: '/departments', roles: [ROLES.SUPER_ADMIN, ROLES.COLLEGE_ADMIN] },
   { icon: BarChart3, label: 'Analytics', path: '/analytics', roles: [ROLES.SUPER_ADMIN, ROLES.COLLEGE_ADMIN] },
   { icon: AlertTriangle, label: 'Risk Monitor', path: '/risk-monitor', badge: '357', badgeDanger: true, roles: [ROLES.SUPER_ADMIN, ROLES.COLLEGE_ADMIN] },
-  { icon: FileText, label: 'Reports', path: '/reports', roles: [ROLES.SUPER_ADMIN, ROLES.COLLEGE_ADMIN] },
+  // { icon: FileText, label: 'Reports', path: '/reports', roles: [ROLES.SUPER_ADMIN, ROLES.COLLEGE_ADMIN] },
   { icon: Bell, label: 'Notifications', path: '/notifications', roles: [ROLES.SUPER_ADMIN, ROLES.COLLEGE_ADMIN] },
   { icon: Settings, label: 'Settings', path: '/settings', roles: [ROLES.SUPER_ADMIN, ROLES.COLLEGE_ADMIN] },
   { icon: Building, label: 'College Management', path: '/college-management', roles: [ROLES.SUPER_ADMIN] },

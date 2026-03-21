@@ -5,7 +5,6 @@ import { ROLES } from './constants/roles';
 import SignIn from './pages/SignIn';
 import Dashboard from './pages/Dashboard';
 import Students from './pages/Students';
-import Assessments from './pages/Assessments';
 import Departments from './pages/Departments';
 import Analytics from './pages/Analytics';
 import RiskMonitor from './pages/RiskMonitor';
@@ -31,14 +30,14 @@ export default function App() {
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/students" element={<Students />} />
-        <Route path="/assessments" element={<Assessments />} />
+        <Route path="/assessments" element={<Cycles />} />
         <Route path="/assessments/questions" element={<Questions />} />
         <Route path="/assessments/questions/add" element={<AddQuestion />} />
         <Route path="/assessments/questions/:id" element={<QuestionDetail />} />
         <Route path="/assessments/questions/:id/edit" element={<EditQuestion />} />
         <Route path="/assessments/paper-sets" element={<PaperSets />} />
         <Route path="/assessments/bank" element={<QuestionBank />} />
-        <Route path="/assessments/cycles" element={<Cycles />} />
+        <Route path="/assessments/cycles" element={<Navigate to="/assessments" replace />} />
         <Route path="/assessments/cycles/:id/participants" element={<CycleParticipants />} />
         <Route path="/departments" element={<Departments />} />
         <Route path="/analytics" element={<Analytics />} />

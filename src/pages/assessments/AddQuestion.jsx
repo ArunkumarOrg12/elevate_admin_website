@@ -18,54 +18,44 @@ const CATEGORIES = [
   { value: 'cognitive_ability', label: 'Cognitive Ability' },
   { value: 'behavioral_traits', label: 'Behavioral Traits' },
   { value: 'technical', label: 'Technical' },
-  { value: 'verbal', label: 'Verbal' },
-  { value: 'aptitude', label: 'Aptitude' },
+  { value: 'communication', label: 'Communication' },
 ];
 
 const SUB_CATEGORIES = {
   cognitive_ability: [
     { value: 'logical_reasoning', label: 'Logical Reasoning' },
     { value: 'verbal_reasoning', label: 'Verbal Reasoning' },
-    { value: 'numerical_reasoning', label: 'Numerical Reasoning' },
-    { value: 'abstract_reasoning', label: 'Abstract Reasoning' },
+    { value: 'quantitative', label: 'Quantitative' },
+    { value: 'analytical', label: 'Analytical' },
   ],
   behavioral_traits: [
     { value: 'conscientiousness', label: 'Conscientiousness' },
-    { value: 'openness', label: 'Openness' },
-    { value: 'agreeableness', label: 'Agreeableness' },
     { value: 'emotional_stability', label: 'Emotional Stability' },
-    { value: 'extraversion', label: 'Extraversion' },
-    { value: 'leadership', label: 'Leadership' },
+    { value: 'learning_orientation', label: 'Learning Orientation' },
     { value: 'teamwork', label: 'Teamwork' },
-    { value: 'adaptability', label: 'Adaptability' },
+    { value: 'consistency', label: 'Consistency' },
+    { value: 'situational_judgement', label: 'Situational Judgement' },
   ],
-  technical: [
-    { value: 'programming', label: 'Programming' },
-    { value: 'data_structures', label: 'Data Structures' },
-    { value: 'algorithms', label: 'Algorithms' },
-    { value: 'databases', label: 'Databases' },
-    { value: 'networking', label: 'Networking' },
-    { value: 'system_design', label: 'System Design' },
-    { value: 'os_concepts', label: 'OS Concepts' },
-  ],
-  verbal: [
-    { value: 'reading_comprehension', label: 'Reading Comprehension' },
-    { value: 'vocabulary', label: 'Vocabulary' },
-    { value: 'grammar', label: 'Grammar' },
-  ],
-  aptitude: [
-    { value: 'quantitative', label: 'Quantitative' },
-    { value: 'data_interpretation', label: 'Data Interpretation' },
-    { value: 'logical', label: 'Logical' },
+  technical: [],
+  communication: [
+    { value: 'verbal_reasoning', label: 'Verbal Reasoning' },
+    { value: 'analytical', label: 'Analytical' },
   ],
 };
 
-const PAPER_SETS = ['set1', 'set2', 'set3', 'set4', 'set5'];
+const PAPER_SETS = ['set1', 'set2', 'set3', 'set4'];
 const SEMESTERS = [1, 2, 3, 4, 5, 6, 7, 8];
 const DIFFICULTIES = [
   { value: 'easy', label: 'Easy' },
-  { value: 'medium', label: 'Medium' },
-  { value: 'hard', label: 'Hard' },
+  { value: 'moderate', label: 'Moderate' },
+  { value: 'difficult', label: 'Difficult' },
+];
+const JOB_ROLES = [
+  { value: 'software_developer', label: 'Software Developer' },
+  { value: 'cybersecurity_analyst', label: 'Cybersecurity Analyst' },
+  { value: 'data_analyst', label: 'Data Analyst' },
+  { value: 'cloud_devops_engineer', label: 'Cloud / DevOps Engineer' },
+  { value: 'ai_ml_engineer', label: 'AI / ML Engineer' },
 ];
 const OPTIONS = ['A', 'B', 'C', 'D'];
 const OPTION_TEXT_FIELD = { A: 'option_a_text', B: 'option_b_text', C: 'option_c_text', D: 'option_d_text' };
@@ -82,8 +72,9 @@ export default function AddQuestion() {
     sub_category: '',
     paper_set: '',
     semester: [],
-    difficulty: 'medium',
+    difficulty: 'moderate',
     base_score: '',
+    final_score: '',
     job_role: '',
     correct_answer: '',
     option_a_text: '',
@@ -124,7 +115,8 @@ export default function AddQuestion() {
     if (form.semester.length === 0) e.semester = 'Select at least one semester';
     if (!form.difficulty) e.difficulty = 'Required';
     if (!form.base_score || isNaN(Number(form.base_score))) e.base_score = 'Required';
-    if (needsJobRole && !form.job_role.trim()) e.job_role = 'Required for Technical (S6+)';
+    if (!form.final_score || isNaN(Number(form.final_score))) e.final_score = 'Required';
+    if (needsJobRole && !form.job_role) e.job_role = 'Required for Technical (S6+)';
     if (!form.correct_answer) e.correct_answer = 'Select the correct answer';
     OPTIONS.forEach(l => {
       if (!form[OPTION_TEXT_FIELD[l]].trim()) e[OPTION_TEXT_FIELD[l]] = 'Required';
@@ -143,13 +135,15 @@ export default function AddQuestion() {
       semester: form.semester,
       difficulty: form.difficulty,
       base_score: Number(form.base_score),
+      final_score: Number(form.final_score),
+      question_type: 'mcq',
       correct_answer: form.correct_answer,
       option_a_text: form.option_a_text.trim(),
       option_b_text: form.option_b_text.trim(),
       option_c_text: form.option_c_text.trim(),
       option_d_text: form.option_d_text.trim(),
       ...(form.sub_category && { sub_category: form.sub_category }),
-      ...(needsJobRole && form.job_role && { job_role: form.job_role.trim() }),
+      ...(needsJobRole && form.job_role && { job_role: form.job_role }),
     };
 
     createMutation.mutate(payload, {
@@ -363,36 +357,55 @@ export default function AddQuestion() {
                 </div>
               </div>
 
-              {/* Base Score */}
-              <div className="space-y-1.5">
-                <Label htmlFor="q-score">Base Score <span className="text-red-500">*</span></Label>
-                <Input
-                  id="q-score"
-                  type="number"
-                  min="0"
-                  step="0.5"
-                  placeholder="e.g. 1"
-                  value={form.base_score}
-                  onChange={e => setField('base_score', e.target.value)}
-                  className={errors.base_score ? 'border-red-400' : ''}
-                />
-                {errors.base_score && <p className="text-xs text-red-500">{errors.base_score}</p>}
+              {/* Base Score + Final Score */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor="q-score">Base Score <span className="text-red-500">*</span></Label>
+                  <Input
+                    id="q-score"
+                    type="number"
+                    min="0"
+                    step="0.5"
+                    placeholder="e.g. 1"
+                    value={form.base_score}
+                    onChange={e => setField('base_score', e.target.value)}
+                    className={errors.base_score ? 'border-red-400' : ''}
+                  />
+                  {errors.base_score && <p className="text-xs text-red-500">{errors.base_score}</p>}
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="q-finalscore">Final Score <span className="text-red-500">*</span></Label>
+                  <Input
+                    id="q-finalscore"
+                    type="number"
+                    min="0"
+                    step="0.5"
+                    placeholder="e.g. 1"
+                    value={form.final_score}
+                    onChange={e => setField('final_score', e.target.value)}
+                    className={errors.final_score ? 'border-red-400' : ''}
+                  />
+                  {errors.final_score && <p className="text-xs text-red-500">{errors.final_score}</p>}
+                </div>
               </div>
 
               {/* Job Role (conditional: technical + S6+) */}
               {needsJobRole && (
                 <div className="space-y-1.5">
-                  <Label htmlFor="q-jobrole">
+                  <Label>
                     Job Role <span className="text-red-500">*</span>
                     <span className="ml-1 text-xs text-gray-400 font-normal">(S6+)</span>
                   </Label>
-                  <Input
-                    id="q-jobrole"
-                    placeholder="e.g. Software Engineer"
-                    value={form.job_role}
-                    onChange={e => setField('job_role', e.target.value)}
-                    className={errors.job_role ? 'border-red-400' : ''}
-                  />
+                  <Select value={form.job_role} onValueChange={v => setField('job_role', v)}>
+                    <SelectTrigger className={errors.job_role ? 'border-red-400' : ''}>
+                      <SelectValue placeholder="Select job role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {JOB_ROLES.map(r => (
+                        <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   {errors.job_role && <p className="text-xs text-red-500">{errors.job_role}</p>}
                 </div>
               )}
