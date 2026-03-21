@@ -49,6 +49,7 @@ export const useCreateStudent = () => {
     },
     onError: (error) => {
       console.error("Failed to create student:", error);
+      console.error("Error response:", error?.response?.data); 
     },
   });
 };
@@ -87,18 +88,11 @@ export const useGetDepartments = (collegeId) => {
   return useQuery({
     queryKey: ["departments", collegeId],
     queryFn: async () => {
-       console.log("➡️ collegeId:", collegeId);
-      // Backend registered at /api/v1/department
-      const response = await api.get(
-        `${STUDENT_API.DEPARTMENTS}?college_id=${collegeId}`
-        
-      );
-
-       console.log("➡️ raw response:", response);
-      console.log("➡️ response.data:", response.data);
-      console.log("➡️ response.departments:", response.departments);
-      // Backend returns { data: [...], departments: [...] }
-      return response.data ?? response.departments ?? [];
+      const response = await api.get(STUDENT_API.DEPARTMENTS, {
+        params: { college_id: collegeId }
+      });
+      // interceptor already unwraps, so response IS the data object
+      return response?.departments ?? [];
     },
     enabled: !!collegeId,
   });
