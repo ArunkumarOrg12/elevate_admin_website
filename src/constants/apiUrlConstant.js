@@ -26,6 +26,11 @@ export const ADMIN_PATHS = {
   PAPER_SETS: '/api/v1/assessments/paper-sets',
   QUESTION_BANK: '/api/v1/assessments/bank',
   CYCLES: '/api/v1/assessments/cycles',
+  GET_ALL_ADMINS: "/api/v1/auth/all-admins",
+  DELETE_ADMIN: (id) => `/api/v1/auth/admins/${id}`,
+  CREATE_ADMIN: "/api/v1/auth/register",   // ← adjust to your actual endpoint
+  COLLEGES: "/api/v1/college/colleges",  
+  PROGRAMS:    "/api/v1/program/programs",
 };
 
 export const NOTIFICATION_API = {
@@ -67,5 +72,5 @@ export const QUERY_KEYS = {
 export const STUDENT_API = {
   GET_ALL_STUDENTS: '/api/v1/student',
   CREATE_STUDENT:   '/api/v1/student',
-  DEPARTMENTS:      '/api/v1/department',  // ← used by useGetDepartments
+  DEPARTMENTS:      '/api/v1/department/departments',  // ← used by useGetDepartments
 };

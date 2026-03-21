@@ -21,6 +21,8 @@ import PaperSets from './pages/assessments/PaperSets';
 import QuestionBank from './pages/assessments/QuestionBank';
 import Cycles from './pages/assessments/Cycles';
 import CycleParticipants from './pages/assessments/CycleParticipants';
+import Admins from './pages/Admins';
+import Programs from './pages/Programs';
 
 export default function App() {
   return (
@@ -44,10 +46,16 @@ export default function App() {
         <Route path="/risk-monitor" element={<RiskMonitor />} />
         <Route path="/reports" element={<Reports />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/programs" element={<Programs/>} />
         <Route path="/notifications" element={<Notifications />} />
         <Route path="/college-management" element={
           <RoleGuard allowedRoles={[ROLES.SUPER_ADMIN]} fallback={<Navigate to="/dashboard" replace />}>
             <CollegeManagement />
+          </RoleGuard>
+        } />
+        <Route path="/admins" element={
+          <RoleGuard allowedRoles={[ROLES.SUPER_ADMIN]} fallback={<Navigate to="/dashboard" replace />}>
+            <Admins/>
           </RoleGuard>
         } />
       </Route>

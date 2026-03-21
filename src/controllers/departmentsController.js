@@ -24,10 +24,15 @@ const departmentsApi = {
 };
 
 // ── Hooks ─────────────────────────────────────────────────────────────────────
+// departmentController.js
 export function useDepartments(params) {
   return useQuery({
     queryKey: [...QUERY_KEYS.DEPARTMENTS, params],
-    queryFn: () => departmentsApi.getAll(params),
+    queryFn: async () => {
+      const res = await departmentsApi.getAll(params);
+      console.log("Departments raw response:", res); // check what shape it is
+      return res?.departments ?? res?.data?.departments ?? [];
+    },
   });
 }
 
