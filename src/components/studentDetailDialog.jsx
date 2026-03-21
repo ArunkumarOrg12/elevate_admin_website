@@ -5,7 +5,7 @@ import {
   Dialog, DialogContent, DialogHeader,
   DialogTitle, DialogDescription,
 } from "../components/ui/dialog";
- final_version
+
 
 import {
   User, BookOpen, Calendar, Hash,
