@@ -4,8 +4,20 @@ import { ADMIN_PATHS, QUERY_KEYS } from '../constants/apiUrlConstant';
 
 // ── API functions ─────────────────────────────────────────────────────────────
 const dashboardApi = {
-  getStats: (params) =>
-    api.get(ADMIN_PATHS.DASHBOARD, { params }),
+  getStats: async (params) => {
+    const res = await api.get(`${ADMIN_PATHS.DASHBOARD}/stats`, { params });
+    // Unwrap envelope ({ message, data: {...} }) if present
+    const raw = res?.data ?? res;
+    return {
+      total_students:    raw.total_students    ?? 0,
+      total_colleges:    raw.total_colleges    ?? 0,
+      departments_count: raw.total_departments ?? raw.departments_count ?? 0,
+      active_cycles:     raw.active_cycles     ?? 0,
+      // Normalise field names expected by OverviewStats / QuickMetrics
+      avg_ei_score:      raw.average_ei_score  ?? raw.avg_ei_score ?? 0,
+      high_risk_count:   raw.high_risk_students ?? raw.high_risk_count ?? 0,
+    };
+  },
 
   getEITrends: (params) =>
     api.get(`${ADMIN_PATHS.DASHBOARD}/ei-trends`, { params }),

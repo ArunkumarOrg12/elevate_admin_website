@@ -489,7 +489,7 @@ export default function Cycles() {
               <TableBody>
                 {filtered.map(cycle => {
                   const cId = cycle.id || cycle._id;
-                  const isPublished = cycle.is_published ?? cycle.isPublished ?? false;
+                  const isPublished = cycle.result_published ?? cycle.is_published ?? cycle.isPublished ?? false;
                   const isPubPending = publishMutation.isPending || unpublishMutation.isPending;
                   return (
                     <TableRow key={cId}>

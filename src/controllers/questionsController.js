@@ -10,12 +10,22 @@ const questionsApi = {
   create: (data) => api.post(ADMIN_PATHS.QUESTIONS, data),
   update: (id, data) => api.put(`${ADMIN_PATHS.QUESTIONS}/${id}`, data),
   remove: (id) => api.delete(`${ADMIN_PATHS.QUESTIONS}/${id}`),
+  // Backend registers these as PUT — used by both AddQuestion (initial) and EditQuestion (update)
   uploadQuestionImage: (id, formData) =>
-    api.post(`${ADMIN_PATHS.QUESTIONS.replace('/questions', '')}/upload/${id}/question-image`, formData, {
+    api.put(`${ADMIN_PATHS.QUESTIONS.replace('/questions', '')}/upload/${id}/question-image`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     }),
   uploadOptionImages: (id, formData) =>
-    api.post(`${ADMIN_PATHS.QUESTIONS.replace('/questions', '')}/upload/${id}/option-image`, formData, {
+    api.put(`${ADMIN_PATHS.QUESTIONS.replace('/questions', '')}/upload/${id}/option-image`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
+  // Aliases used by EditQuestion hooks (same endpoint)
+  updateQuestionImage: (id, formData) =>
+    api.put(`${ADMIN_PATHS.QUESTIONS.replace('/questions', '')}/upload/${id}/question-image`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }),
+  updateOptionImages: (id, formData) =>
+    api.put(`${ADMIN_PATHS.QUESTIONS.replace('/questions', '')}/upload/${id}/option-image`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     }),
 };
@@ -86,6 +96,49 @@ export function useUpdateQuestion() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, ...data }) => questionsApi.update(id, data),
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.QUESTIONS });
+      queryClient.invalidateQueries({ queryKey: [...QUERY_KEYS.QUESTIONS, id] });
+    },
+  });
+}
+
+export function useUpdateQuestionImage() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, formData }) => questionsApi.updateQuestionImage(id, formData),
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: [...QUERY_KEYS.QUESTIONS, id] });
+    },
+  });
+}
+
+export function useUpdateOptionImages() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, formData }) => questionsApi.updateOptionImages(id, formData),
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: [...QUERY_KEYS.QUESTIONS, id] });
+    },
+  });
+}
+
+// Used by AddQuestion after creation — same PUT endpoints, also invalidates the list
+export function useUploadQuestionImage() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, formData }) => questionsApi.uploadQuestionImage(id, formData),
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.QUESTIONS });
+      queryClient.invalidateQueries({ queryKey: [...QUERY_KEYS.QUESTIONS, id] });
+    },
+  });
+}
+
+export function useUploadOptionImages() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, formData }) => questionsApi.uploadOptionImages(id, formData),
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.QUESTIONS });
       queryClient.invalidateQueries({ queryKey: [...QUERY_KEYS.QUESTIONS, id] });

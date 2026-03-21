@@ -47,4 +47,5 @@ export function useUpdateNotifications() {
   });
 }
 
+
 export default settingsApi;

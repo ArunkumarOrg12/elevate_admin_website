@@ -40,7 +40,7 @@ export default function QuestionDetail() {
   const updateMutation = useUpdateQuestion();
   const deleteMutation = useDeleteQuestion();
 
-  const question = data?.data;
+  const question = data?.question ?? data?.data ?? (data && typeof data === 'object' && data.id ? data : null);
 
   const [form, setForm] = useState(null);
 

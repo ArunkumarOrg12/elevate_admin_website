@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, ImageIcon, X } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { ArrowLeft, ImageIcon, X, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,11 +9,13 @@ import {
   Select, SelectTrigger, SelectValue, SelectContent, SelectItem,
 } from '@/components/ui/select';
 import {
-  useCreateQuestion,
-  useUploadQuestionImage,
-  useUploadOptionImages,
+  useQuestion,
+  useUpdateQuestion,
+  useUpdateQuestionImage,
+  useUpdateOptionImages,
 } from '../../controllers/questionsController';
 
+// ── Static data (same as AddQuestion) ─────────────────────────────────────────
 const CATEGORIES = [
   { value: 'cognitive_ability', label: 'Cognitive Ability' },
   { value: 'behavioral_traits', label: 'Behavioral Traits' },
@@ -70,30 +72,46 @@ const DIFFICULTIES = [
 const OPTIONS = ['A', 'B', 'C', 'D'];
 const OPTION_TEXT_FIELD = { A: 'option_a_text', B: 'option_b_text', C: 'option_c_text', D: 'option_d_text' };
 
-export default function AddQuestion() {
+// ── Main Component ─────────────────────────────────────────────────────────────
+export default function EditQuestion() {
+  const { id } = useParams();
   const navigate = useNavigate();
-  const createMutation = useCreateQuestion();
-  const uploadQuestionImageMutation = useUploadQuestionImage();
-  const uploadOptionImagesMutation = useUploadOptionImages();
 
-  const [form, setForm] = useState({
-    question_text: '',
-    category: '',
-    sub_category: '',
-    paper_set: '',
-    semester: [],
-    difficulty: 'medium',
-    base_score: '',
-    job_role: '',
-    correct_answer: '',
-    option_a_text: '',
-    option_b_text: '',
-    option_c_text: '',
-    option_d_text: '',
-  });
-  const [questionImage, setQuestionImage] = useState(null);
+  const { data, isLoading, isError } = useQuestion(id);
+  const updateMutation = useUpdateQuestion();
+
+  const updateQuestionImageMutation = useUpdateQuestionImage();
+  const updateOptionImagesMutation = useUpdateOptionImages();
+
+  // Axios interceptor already unwraps res.data, so `data` IS the response body.
+  // Backend may return { question: {...} }, { data: {...} }, or the object directly.
+  const question = data?.question ?? data?.data ?? (data && typeof data === 'object' && data.id ? data : null);
+
+  const [form, setForm] = useState(null);
+  const [questionImage, setQuestionImage] = useState(null);   // new file to upload
   const [optionImages, setOptionImages] = useState({ A: null, B: null, C: null, D: null });
   const [errors, setErrors] = useState({});
+
+  // Populate form when data arrives
+  useEffect(() => {
+    if (question) {
+      setForm({
+        question_text: question.question_text || question.text || question.question || '',
+        category: question.category || '',
+        sub_category: question.sub_category || '',
+        paper_set: question.paper_set || '',
+        semester: Array.isArray(question.semester) ? question.semester : [],
+        difficulty: question.difficulty || 'medium',
+        base_score: question.base_score ?? question.marks ?? '',
+        job_role: question.job_role || '',
+        correct_answer: question.correct_answer || '',
+        option_a_text: question.option_a_text || '',
+        option_b_text: question.option_b_text || '',
+        option_c_text: question.option_c_text || '',
+        option_d_text: question.option_d_text || '',
+      });
+    }
+  }, [question]);
 
   const setField = (key, value) => {
     setForm(prev => ({ ...prev, [key]: value }));
@@ -110,12 +128,13 @@ export default function AddQuestion() {
     if (errors.semester) setErrors(prev => ({ ...prev, semester: '' }));
   };
 
-  const isTechnical = form.category === 'technical';
-  const hasSeniorSemester = form.semester.some(s => s >= 6);
+  const isTechnical = form?.category === 'technical';
+  const hasSeniorSemester = form?.semester?.some(s => s >= 6);
   const needsJobRole = isTechnical && hasSeniorSemester;
-  const subCategoryOptions = SUB_CATEGORIES[form.category] || [];
+  const subCategoryOptions = SUB_CATEGORIES[form?.category] || [];
 
   const validate = () => {
+    if (!form) return false;
     const e = {};
     if (!form.question_text.trim()) e.question_text = 'Required';
     if (!form.category) e.category = 'Required';
@@ -137,6 +156,7 @@ export default function AddQuestion() {
     if (!validate()) return;
 
     const payload = {
+      id,
       question_text: form.question_text.trim(),
       category: form.category,
       paper_set: form.paper_set,
@@ -152,31 +172,23 @@ export default function AddQuestion() {
       ...(needsJobRole && form.job_role && { job_role: form.job_role.trim() }),
     };
 
-    createMutation.mutate(payload, {
-      onSuccess: async (res) => {
-        // Axios interceptor already unwraps res.data, so `res` IS the response body.
-        // Handle all shapes: { id } | { question: { id } } | { data: { id } }
-        const questionId = res?.id || res?.question?.id || res?.data?.id;
-
-        if (!questionId) {
-          console.warn('[AddQuestion] Could not extract question ID from response:', res);
-          navigate('/assessments/questions');
-          return;
-        }
-
+    updateMutation.mutate(payload, {
+      onSuccess: async () => {
+        // Upload new question image if selected
         if (questionImage) {
           const fd = new FormData();
           fd.append('file', questionImage);
-          await uploadQuestionImageMutation.mutateAsync({ id: questionId, formData: fd }).catch(() => {});
+          await updateQuestionImageMutation.mutateAsync({ id, formData: fd }).catch(() => {});
         }
 
+        // Upload new option images if any selected
         const hasOptionImages = Object.values(optionImages).some(Boolean);
         if (hasOptionImages) {
           const fd = new FormData();
           Object.entries(optionImages).forEach(([letter, file]) => {
             if (file) fd.append(`option_${letter.toLowerCase()}_image`, file);
           });
-          await uploadOptionImagesMutation.mutateAsync({ id: questionId, formData: fd }).catch(() => {});
+          await updateOptionImagesMutation.mutateAsync({ id, formData: fd }).catch(() => {});
         }
 
         navigate('/assessments/questions');
@@ -185,10 +197,33 @@ export default function AddQuestion() {
   };
 
   const isSubmitting =
-    createMutation.isPending ||
-    uploadQuestionImageMutation.isPending ||
-    uploadOptionImagesMutation.isPending;
+    updateMutation.isPending ||
+    updateQuestionImageMutation.isPending ||
+    updateOptionImagesMutation.isPending;
 
+  // ── Loading / Error states ─────────────────────────────────────────────────
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-24 text-gray-400 gap-2 text-sm">
+        <Loader2 size={18} className="animate-spin" /> Loading question...
+      </div>
+    );
+  }
+
+  if (isError || (!isLoading && !question)) {
+    return (
+      <div className="py-16 text-center">
+        <p className="text-sm text-red-500 mb-3">Question not found or failed to load.</p>
+        <Button variant="secondary" size="sm" onClick={() => navigate('/assessments/questions')}>
+          Back to Questions
+        </Button>
+      </div>
+    );
+  }
+
+  if (!form) return null;
+
+  // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <div className="page-enter space-y-4">
       {/* Header */}
@@ -198,16 +233,16 @@ export default function AddQuestion() {
         </Button>
         <div>
           <h1 className="text-xl font-bold text-gray-900" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
-            Add Question
+            Edit Question
           </h1>
-          <p className="text-gray-500 text-sm">Create a new assessment question</p>
+          <p className="text-gray-500 text-sm">Update question details &amp; answers</p>
         </div>
       </div>
 
-      {/* 2-column on desktop */}
+      {/* 2-column layout matching AddQuestion */}
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-4 items-start">
 
-        {/* LEFT: Question Content + Answer Options */}
+        {/* LEFT — Question Content + Answer Options */}
         <div className="space-y-4">
           {/* Question Content */}
           <Card>
@@ -227,8 +262,23 @@ export default function AddQuestion() {
                 />
                 {errors.question_text && <p className="text-xs text-red-500">{errors.question_text}</p>}
               </div>
+
+              {/* Existing question image */}
+              {question?.question_image && !questionImage && (
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-gray-400">Current image:</span>
+                  <a
+                    href={question.question_image}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-xs text-indigo-600 hover:underline truncate max-w-[200px]"
+                  >
+                    {question.question_image.split('/').pop()}
+                  </a>
+                </div>
+              )}
               <ImageUpload
-                label="Question Image (optional)"
+                label={question?.question_image ? 'Replace question image' : 'Question Image (optional)'}
                 file={questionImage}
                 onChange={setQuestionImage}
               />
@@ -248,6 +298,7 @@ export default function AddQuestion() {
               {OPTIONS.map(letter => {
                 const textField = OPTION_TEXT_FIELD[letter];
                 const isCorrect = form.correct_answer === letter;
+                const existingImg = question?.[`option_${letter.toLowerCase()}_image`];
                 return (
                   <div key={letter} className={`rounded-lg border p-3 space-y-2 transition-colors ${isCorrect ? 'border-emerald-300 bg-emerald-50/50' : 'border-gray-100'}`}>
                     <div className="flex items-center gap-3">
@@ -273,9 +324,22 @@ export default function AddQuestion() {
                     {errors[textField] && (
                       <p className="text-xs text-red-500 pl-11">{errors[textField]}</p>
                     )}
-                    <div className="pl-11">
+                    <div className="pl-11 space-y-1">
+                      {existingImg && !optionImages[letter] && (
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs text-gray-400">Current:</span>
+                          <a
+                            href={existingImg}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-xs text-indigo-600 hover:underline truncate max-w-[160px]"
+                          >
+                            {existingImg.split('/').pop()}
+                          </a>
+                        </div>
+                      )}
                       <ImageUpload
-                        label={`Option ${letter} image (optional)`}
+                        label={existingImg ? `Replace Option ${letter} image` : `Option ${letter} image (optional)`}
                         file={optionImages[letter]}
                         onChange={file => setOptionImages(prev => ({ ...prev, [letter]: file }))}
                       />
@@ -287,7 +351,7 @@ export default function AddQuestion() {
           </Card>
         </div>
 
-        {/* RIGHT: Classification (sticky on desktop) */}
+        {/* RIGHT — Classification (sticky on desktop) */}
         <div className="space-y-4 lg:sticky lg:top-4">
           <Card>
             <CardHeader className="px-4 sm:px-5 py-3.5 border-b border-gray-100">
@@ -331,7 +395,7 @@ export default function AddQuestion() {
                 </div>
               )}
 
-              {/* Paper Set + Difficulty row */}
+              {/* Paper Set + Difficulty */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <Label>Paper Set <span className="text-red-500">*</span></Label>
@@ -379,7 +443,7 @@ export default function AddQuestion() {
                 {errors.base_score && <p className="text-xs text-red-500">{errors.base_score}</p>}
               </div>
 
-              {/* Job Role (conditional: technical + S6+) */}
+              {/* Job Role (conditional) */}
               {needsJobRole && (
                 <div className="space-y-1.5">
                   <Label htmlFor="q-jobrole">
@@ -422,17 +486,17 @@ export default function AddQuestion() {
                 {errors.semester && <p className="text-xs text-red-500">{errors.semester}</p>}
               </div>
 
-              {/* Actions inside classification card on desktop */}
+              {/* Actions */}
               <div className="pt-2 flex flex-col gap-2">
                 <Button onClick={handleSubmit} disabled={isSubmitting} className="w-full">
-                  {isSubmitting ? 'Saving...' : 'Save Question'}
+                  {isSubmitting ? 'Saving...' : 'Save Changes'}
                 </Button>
                 <Button variant="secondary" onClick={() => navigate(-1)} className="w-full">
                   Cancel
                 </Button>
-                {createMutation.isError && (
+                {updateMutation.isError && (
                   <p className="text-xs text-red-500 text-center">
-                    {createMutation.error?.response?.data?.message || 'Failed to save. Please try again.'}
+                    {updateMutation.error?.response?.data?.message || 'Failed to save. Please try again.'}
                   </p>
                 )}
               </div>
@@ -444,6 +508,7 @@ export default function AddQuestion() {
   );
 }
 
+// ── Image Upload helper (identical to AddQuestion) ─────────────────────────────
 function ImageUpload({ label, file, onChange }) {
   return (
     <div className="flex items-center gap-2">
