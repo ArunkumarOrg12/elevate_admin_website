@@ -1,5 +1,9 @@
 import { useState } from "react";
 import {
+  Dialog, DialogContent, DialogHeader,
+  DialogTitle, DialogDescription, DialogFooter,
+} from "@/components/ui/dialog";
+import {
   Download, SlidersHorizontal, Search,
   ChevronUp, ChevronDown, Plus, Eye, Pencil, Trash2,
 } from "lucide-react";
@@ -18,6 +22,7 @@ import { useGetAllStudents, useDeleteStudent } from "../controllers/studentsCont
 import AddStudentDialog from "../components/AddStudentPopUp";
 import StudentDetailDialog from "../components/studentDetailDialog";
 import { useAuth } from "../hooks/useAuth";
+import EditStudentDialog from "../components/UpdateStudentPopUp";
 
 const DEPTS    = ["All", "CSE", "ECE", "MECH", "CIVIL", "IT", "EEE", "MBA", "MCA"];
 const STATUSES = ["All", "Ready", "Developing", "At Risk"];
@@ -40,6 +45,9 @@ export default function Students() {
   const [selectedStudent, setSelectedStudent]   = useState(null); // for detail popup
   const PER_PAGE = 8;
 
+  const [editStudent, setEditStudent] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+
   const { user } = useAuth();
   const { data: responseData, isLoading, isError } = useGetAllStudents();
   const deleteStudentMutation = useDeleteStudent();
@@ -51,8 +59,11 @@ export default function Students() {
   const students = rawStudents.map((u) => ({
     id:             u.id,
     name:           `${u.first_name} ${u.last_name}`,
+     email:          u.email, 
     roll:           u.student?.enrollment_number  || "N/A",
     dept:           u.student?.department?.name   || "N/A",
+    department_id:  u.student?.department_id      || "",
+    program_id:     u.student?.program_id         || "",
     year:           u.student?.batch_year         || "N/A",
     status:         u.student?.status             ?? "Ready",
     eiScore:        u.student?.eiScore            ?? 0,
@@ -80,14 +91,13 @@ export default function Students() {
   // ✅ Opens detail popup instead of navigating
   const handleView = (student) => setSelectedStudent(student);
 
-  const handleEdit = (student) => {
-    console.log("Edit student:", student.id); // TODO: open edit dialog
-  };
+ const handleEdit = (student) => setEditStudent(student);
 
-  const handleDelete = (student) => {
-    if (!window.confirm(`Delete ${student.name}? This cannot be undone.`)) return;
-    deleteStudentMutation.mutate(student.id);
-  };
+  const handleDelete = () => {
+  deleteStudentMutation.mutate(deleteTarget.id, {
+    onSuccess: () => setDeleteTarget(null),
+  });
+};
 
   let filtered = students.filter((s) => {
     const q = search.toLowerCase();
@@ -141,12 +151,60 @@ export default function Students() {
         collegeId={user?.college_id}
       />
 
+      <EditStudentDialog
+  open={!!editStudent}
+  onOpenChange={(open) => { if (!open) setEditStudent(null); }}
+  student={editStudent}
+  collegeId={user?.college_id}
+/>
+
+
+
       {/* ✅ Student detail popup */}
       <StudentDetailDialog
         open={!!selectedStudent}
         onOpenChange={(open) => { if (!open) setSelectedStudent(null); }}
         student={selectedStudent}
       />
+
+      {/* Delete Confirmation Dialog */}
+<Dialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}>
+  <DialogContent className="max-w-sm">
+    <DialogHeader>
+      <div className="flex items-center gap-3 mb-1">
+        <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+          <Trash2 size={18} className="text-red-600" />
+        </div>
+        <div>
+          <DialogTitle className="text-sm font-semibold text-gray-900">
+            Delete Student
+          </DialogTitle>
+          <DialogDescription className="text-xs text-gray-500">
+            This action cannot be undone
+          </DialogDescription>
+        </div>
+      </div>
+    </DialogHeader>
+
+    <p className="text-sm text-gray-700">
+      Are you sure you want to delete{" "}
+      <span className="font-semibold">{deleteTarget?.name}</span>?
+    </p>
+
+    <DialogFooter className="flex gap-2 pt-2">
+      <Button variant="secondary" onClick={() => setDeleteTarget(null)}>
+        Cancel
+      </Button>
+      <Button
+        variant="destructive"
+        onClick={handleDelete}
+        disabled={deleteStudentMutation.isPending}
+      >
+        {deleteStudentMutation.isPending ? "Deleting…" : "Yes, Delete"}
+      </Button>
+    </DialogFooter>
+  </DialogContent>
+</Dialog>
 
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
@@ -306,14 +364,14 @@ export default function Students() {
                     >
                       <Pencil size={15} />
                     </button>
-                    <button
-                      onClick={() => handleDelete(s)}
-                      title="Delete student"
-                      disabled={deleteStudentMutation.isPending}
-                      className="p-1.5 rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-40"
-                    >
-                      <Trash2 size={15} />
-                    </button>
+                  <button
+  onClick={() => setDeleteTarget(s)}
+  title="Delete student"
+  disabled={deleteStudentMutation.isPending}
+  className="p-1.5 rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-40"
+>
+  <Trash2 size={15} />
+</button>
                   </div>
                 </TableCell>
               </TableRow>
