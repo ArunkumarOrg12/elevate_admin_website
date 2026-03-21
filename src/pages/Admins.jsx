@@ -70,11 +70,11 @@ const admins = rawUsers
   };
 
   // ✅ Opens detail popup instead of navigating
- const handleView = (admin) => setSelectedAdmin(admin);
+//  const handleView = (admin) => setSelectedAdmin(admin);
 
-const handleEdit = (admin) => {
-  console.log("Edit admin:", admin.id);
-};
+// const handleEdit = (admin) => {
+//   console.log("Edit admin:", admin.id);
+// };
 
 const handleDelete = () => {
   deleteAdminMutation.mutate(deleteTarget.id, {
@@ -346,7 +346,7 @@ function formatDate(date) {
     {/* Actions */}
     <TableCell>
       <div className="flex items-center gap-1">
-        <button
+        {/* <button
           onClick={() => handleView(a)}
           className="p-1.5 hover:text-indigo-600"
         >
@@ -358,7 +358,7 @@ function formatDate(date) {
           className="p-1.5 hover:text-amber-600"
         >
           <Pencil size={15} />
-        </button>
+        </button> */}
 
      {a.role !== "superadmin" && (
   <button
