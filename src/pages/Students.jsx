@@ -3,7 +3,9 @@ import {
   Download, SlidersHorizontal, Search,
   ChevronUp, ChevronDown, Plus, Eye, Pencil, Trash2,
 } from "lucide-react";
+
 import { Users, UserCheck, TrendingUp, AlertTriangle } from "lucide-react";
+
 import StatCard from "../components/common/StatCard";
 import StatusBadge from "../components/common/StatusBadge";
 import { Button } from "@/components/ui/button";
@@ -13,11 +15,14 @@ import {
   Table, TableHeader, TableBody,
   TableHead, TableRow, TableCell,
 } from "@/components/ui/table";
+
 import { getEIColor, getEIBgColor, getEICategory, formatDate } from "../utils/helpers";
+
 import { useGetAllStudents, useDeleteStudent } from "../controllers/studentsController";
 import AddStudentDialog from "../components/AddStudentPopUp";
 import StudentDetailDialog from "../components/studentDetailDialog";
 import { useAuth } from "../hooks/useAuth";
+
 
 const DEPTS = ["All", "CSE", "ECE", "MECH", "CIVIL", "IT", "EEE", "MBA", "MCA"];
 const STATUSES = [
@@ -27,6 +32,7 @@ const STATUSES = [
   { value: "MODERATE",        label: "Moderate" },
   { value: "HIGH_RISK",       label: "High Risk" },
 ];
+
 
 function SortIcon({ field, sortField, sortDir }) {
   if (sortField !== field) return <ChevronUp size={12} className="text-gray-300" />;
@@ -53,6 +59,7 @@ export default function Students() {
   const rawStudents = Array.isArray(responseData)
     ? responseData
     : (responseData?.data ?? []);
+
 
   const students = rawStudents.map((u) => {
     const ei = u.student?.ei_score ?? u.student?.eiScore ?? 0;
@@ -87,6 +94,7 @@ export default function Students() {
     };
   });
 
+
   const handleSort = (field) => {
     if (sortField === field) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
     else { setSortField(field); setSortDir("desc"); }
@@ -109,8 +117,10 @@ export default function Students() {
     const q = search.toLowerCase();
     if (q && !s.name.toLowerCase().includes(q) && !(s.roll || "").toLowerCase().includes(q))
       return false;
+
     if (dept   !== "All" && s.dept         !== dept)         return false;
     if (status !== "All" && s.riskCategory !== status)      return false;
+
     return true;
   });
 
@@ -126,10 +136,12 @@ export default function Students() {
   const paged = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
 
   const counts = {
+
     total:         students.length,
     industryReady: students.filter((s) => s.riskCategory === "INDUSTRY_READY").length,
     placementReady:students.filter((s) => s.riskCategory === "PLACEMENT_READY").length,
     highRisk:      students.filter((s) => s.riskCategory === "HIGH_RISK").length,
+
   };
 
   const COLS = [
@@ -190,10 +202,12 @@ export default function Students() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
+
         <StatCard label="TOTAL STUDENTS"   value={counts.total}          icon={Users}         accentColor="blue"    />
         <StatCard label="INDUSTRY READY"   value={counts.industryReady}  icon={UserCheck}     accentColor="emerald" description="EI ≥ 80"  />
         <StatCard label="PLACEMENT READY"  value={counts.placementReady} icon={TrendingUp}    accentColor="indigo"  description="EI 60–79" />
         <StatCard label="HIGH RISK"        value={counts.highRisk}       icon={AlertTriangle} accentColor="red"     description="EI < 40"  />
+
       </div>
 
       {/* Filters */}
@@ -216,6 +230,7 @@ export default function Students() {
             >
               {DEPTS.map((d) => <option key={d}>{d}</option>)}
             </select>
+
             <div className="flex gap-1 flex-wrap">
               {STATUSES.map((s) => (
                 <Button
@@ -224,6 +239,7 @@ export default function Students() {
                   size="sm"
                   onClick={() => { setStatus(s.value); setPage(1); }}
                   className={status !== s.value ? "bg-gray-100 text-gray-600 hover:bg-gray-200" : ""}
+
                 >
                   {s.label}
                 </Button>
@@ -297,6 +313,7 @@ export default function Students() {
 
                 {/* Velocity */}
                 <TableCell>
+
                   {s.velocity === null ? (
                     <span className="text-xs text-gray-400">First Assessment</span>
                   ) : (
@@ -307,6 +324,7 @@ export default function Students() {
                 </TableCell>
 
                 <TableCell><StatusBadge riskCategory={s.riskCategory} /></TableCell>
+
                 <TableCell className="text-sm text-gray-500">{formatDate(s.lastAssessment)}</TableCell>
 
                 {/* Actions */}

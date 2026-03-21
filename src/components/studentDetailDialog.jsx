@@ -1,15 +1,21 @@
+
 import { useState } from "react";
+
 import {
   Dialog, DialogContent, DialogHeader,
   DialogTitle, DialogDescription,
 } from "../components/ui/dialog";
+ final_version
+
 import {
   User, BookOpen, Calendar, Hash,
   GraduationCap, Building2, ShieldCheck, Mail,
 } from "lucide-react";
 import { getEIColor, getEIBgColor } from "../utils/helpers";
+
 import StatusBadge from "./common/StatusBadge";
 import TopicWeaknessPanel from "./dashboard/TopicWeaknessPanel";
+
 
 function InfoRow({ icon: Icon, label, value }) {
   if (!value && value !== 0) return null;
@@ -34,6 +40,7 @@ function StatPill({ label, value, color }) {
     </div>
   );
 }
+
 
 const SECTIONS = [
   { key: 'aptitude_score',      label: 'Aptitude',      weight: '30%' },
@@ -72,16 +79,20 @@ function SectionBreakdown({ student }) {
         })}
       </div>
     </div>
+
   );
 }
 
 export default function StudentDetailDialog({ open, onOpenChange, student }) {
+
   const [topicOpen, setTopicOpen] = useState(false);
+
 
   if (!student) return null;
 
   const initials = student.name
     .split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
+
 
   const velocityDisplay = () => {
     if (student.velocity === null || student.velocity === undefined) {
@@ -93,6 +104,7 @@ export default function StudentDetailDialog({ open, onOpenChange, student }) {
       </span>
     );
   };
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -113,7 +125,9 @@ export default function StudentDetailDialog({ open, onOpenChange, student }) {
                 {student.roll} · {student.dept} · {student.year}
               </p>
               <div className="mt-2">
+
                 <StatusBadge riskCategory={student.riskCategory} />
+
               </div>
             </div>
           </div>
@@ -158,6 +172,7 @@ export default function StudentDetailDialog({ open, onOpenChange, student }) {
             />
           </div>
           <div className="flex items-center justify-between mt-1.5">
+
             <span className="text-xs text-gray-400">Growth Velocity</span>
             {velocityDisplay()}
           </div>
@@ -199,6 +214,7 @@ export default function StudentDetailDialog({ open, onOpenChange, student }) {
           <InfoRow icon={ShieldCheck}   label="Category"        value={student.category} />
           <InfoRow icon={Calendar}      label="Date of Birth"   value={student.date_of_birth} />
           <InfoRow icon={Mail}          label="Admission Score" value={student.admission_score ?? undefined} />
+
         </div>
 
         {/* ── Footer ────────────────────────────────────────── */}
@@ -213,4 +229,6 @@ export default function StudentDetailDialog({ open, onOpenChange, student }) {
       </DialogContent>
     </Dialog>
   );
+ final_version
 }
+
