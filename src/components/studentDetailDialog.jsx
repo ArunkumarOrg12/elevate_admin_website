@@ -229,6 +229,6 @@ export default function StudentDetailDialog({ open, onOpenChange, student }) {
       </DialogContent>
     </Dialog>
   );
- final_version
+
 }
 
