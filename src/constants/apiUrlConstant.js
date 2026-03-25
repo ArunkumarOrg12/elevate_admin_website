@@ -20,7 +20,6 @@ export const ADMIN_PATHS = {
   RISK_MONITOR: '/api/v1/risk-monitor',
   REPORTS: '/api/v1/reports',
   SETTINGS: '/api/v1/settings',
-  COLLEGES: '/api/v1/college/colleges',
   // Assessment sub-resources
   QUESTIONS: '/api/v1/assessments/questions',
   PAPER_SETS: '/api/v1/assessments/paper-sets',
@@ -73,4 +72,5 @@ export const STUDENT_API = {
   GET_ALL_STUDENTS: '/api/v1/student',
   CREATE_STUDENT:   '/api/v1/student',
   DEPARTMENTS:      '/api/v1/department/departments',  // ← used by useGetDepartments
+  BULK_UPLOAD: '/api/v1/student/bulk-upload'
 };

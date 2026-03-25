@@ -98,4 +98,26 @@ export const useGetDepartments = (collegeId) => {
   });
 };
 
+//bulk import
+export const useBulkUploadStudents = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (students) => {
+      const response = await api.post(STUDENT_API.BULK_UPLOAD, students);
+      return response.data ?? response;
+    },
+    onSuccess: (data) => {
+      console.log("Bulk upload result:", data);
+      console.log("FAILED DETAILS:", JSON.stringify(data.failed, null, 2));
+      alert(`✅ ${data.successCount} uploaded, ❌ ${data.failedCount} failed`);
+      queryClient.invalidateQueries({ queryKey: ["students"] });
+    },
+    onError: (error) => {
+      console.error("Bulk upload failed:", error?.response?.data);
+    },
+  });
+};
+
+
 export default studentsApi;
