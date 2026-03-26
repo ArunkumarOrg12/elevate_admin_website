@@ -206,7 +206,7 @@ export default function Departments() {
 
       {/* Add / Edit Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg p-4">
           <DialogHeader>
             <DialogTitle>{isEditMode ? 'Edit Department' : 'Add Department'}</DialogTitle>
             <DialogDescription>

@@ -20,7 +20,7 @@ const ASSESSMENT_CHILDREN = [
 
 const NAV_ITEMS = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard', roles: [ROLES.SUPER_ADMIN, ROLES.COLLEGE_ADMIN] },
-  { icon: Users, label: 'Students', path: '/students', badge: '1.8k', roles: [ROLES.SUPER_ADMIN, ROLES.COLLEGE_ADMIN] },
+  { icon: Users, label: 'Students', path: '/students', /*badge: '1.8k'*/ roles: [ROLES.SUPER_ADMIN, ROLES.COLLEGE_ADMIN] },
   {
     icon: ClipboardList,
     label: 'Assessments',
@@ -31,7 +31,7 @@ const NAV_ITEMS = [
   { icon: Building2, label: 'Departments', path: '/departments', roles: [ROLES.SUPER_ADMIN, ROLES.COLLEGE_ADMIN] },
   { icon: Building2, label: 'Programs', path: '/programs', roles: [ROLES.SUPER_ADMIN, ROLES.COLLEGE_ADMIN] },
   { icon: BarChart3, label: 'Analytics', path: '/analytics', roles: [ROLES.SUPER_ADMIN, ROLES.COLLEGE_ADMIN] },
-  { icon: AlertTriangle, label: 'Risk Monitor', path: '/risk-monitor', badge: '357', badgeDanger: true, roles: [ROLES.SUPER_ADMIN, ROLES.COLLEGE_ADMIN] },
+  { icon: AlertTriangle, label: 'Risk Monitor', path: '/risk-monitor', /*badge: '357'*/ badgeDanger: true, roles: [ROLES.SUPER_ADMIN, ROLES.COLLEGE_ADMIN] },
   // { icon: FileText, label: 'Reports', path: '/reports', roles: [ROLES.SUPER_ADMIN, ROLES.COLLEGE_ADMIN] },
   { icon: Bell, label: 'Notifications', path: '/notifications', roles: [ROLES.SUPER_ADMIN, ROLES.COLLEGE_ADMIN] },
   { icon: Settings, label: 'Settings', path: '/settings', roles: [ROLES.SUPER_ADMIN, ROLES.COLLEGE_ADMIN] },

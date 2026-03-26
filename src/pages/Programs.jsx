@@ -251,7 +251,7 @@ const collegeId = searchParams.get('college_id') || user?.college_id;
 
       {/* Add / Edit Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md p-4">
           <DialogHeader>
             <DialogTitle>{isEditMode ? 'Edit Program' : 'Add Program'}</DialogTitle>
             <DialogDescription>
