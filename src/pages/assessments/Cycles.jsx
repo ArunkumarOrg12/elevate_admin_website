@@ -345,6 +345,8 @@ export default function Cycles() {
   const [searchQ, setSearchQ] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterBatch, setFilterBatch] = useState('all');
+  const [page, setPage] = useState(1);
+  const PER_PAGE = 8;
 
   const { data, isLoading, isError } = useCycles();
   const changeStatusMutation = useChangeCycleStatus();
@@ -367,6 +369,10 @@ export default function Cycles() {
       return matchSearch && matchStatus && matchBatch;
     });
   }, [cycles, searchQ, filterStatus, filterBatch]);
+
+  const total = filtered.length;
+  const pages = Math.ceil(total / PER_PAGE);
+  const paged = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
 
   const stats = {
     total: cycles.length,
@@ -431,11 +437,11 @@ export default function Cycles() {
                   type="text"
                   placeholder="Search cycles..."
                   value={searchQ}
-                  onChange={e => setSearchQ(e.target.value)}
+                  onChange={e => { setSearchQ(e.target.value); setPage(1); }}
                   className="h-8 pl-7 pr-3 text-xs rounded-[8px] border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent w-44"
                 />
               </div>
-              <Select value={filterStatus} onValueChange={setFilterStatus}>
+              <Select value={filterStatus} onValueChange={(v) => { setFilterStatus(v); setPage(1); }}>
                 <SelectTrigger className="h-8 text-xs w-32 gap-1">
                   <Filter size={11} className="text-gray-400" />
                   <SelectValue />
@@ -448,7 +454,7 @@ export default function Cycles() {
                 </SelectContent>
               </Select>
               {batches.length > 0 && (
-                <Select value={filterBatch} onValueChange={setFilterBatch}>
+                <Select value={filterBatch} onValueChange={(v) => { setFilterBatch(v); setPage(1); }}>
                   <SelectTrigger className="h-8 text-xs w-32">
                     <SelectValue placeholder="All Batches" />
                   </SelectTrigger>
@@ -487,7 +493,7 @@ export default function Cycles() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.map(cycle => {
+                {paged.map(cycle => {
                   const cId = cycle.id || cycle._id;
                   const isPublished = cycle.result_published ?? cycle.is_published ?? cycle.isPublished ?? false;
                   const isPubPending = publishMutation.isPending || unpublishMutation.isPending;
@@ -629,6 +635,26 @@ export default function Cycles() {
                 })}
               </TableBody>
             </Table>
+          </div>
+        )}
+        {pages > 1 && (
+          <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100 bg-gray-50">
+            <p className="text-xs text-gray-500">
+              Showing {total === 0 ? 0 : Math.min((page - 1) * PER_PAGE + 1, total)}–{Math.min(page * PER_PAGE, total)} of {total} cycles
+            </p>
+            <div className="flex gap-1">
+              {Array.from({ length: pages }, (_, i) => i + 1).map((p) => (
+                <Button
+                  key={p}
+                  variant={page === p ? 'default' : 'ghost'}
+                  size="icon"
+                  className={`w-7 h-7 text-xs ${page !== p ? 'text-gray-600 hover:bg-gray-200' : ''}`}
+                  onClick={() => setPage(p)}
+                >
+                  {p}
+                </Button>
+              ))}
+            </div>
           </div>
         )}
       </Card>

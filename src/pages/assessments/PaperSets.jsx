@@ -89,6 +89,11 @@ export default function PaperSets() {
   const { data, isLoading, isError } = usePaperSets();
   const sets = data?.paperSets ?? data?.data ?? [];
   const questionsByPaperSet = data?.questionsByPaperSet ?? {};
+  const [page, setPage] = useState(1);
+  const PER_PAGE = 8;
+  const total = sets.length;
+  const pages = Math.ceil(total / PER_PAGE);
+  const paged = sets.slice((page - 1) * PER_PAGE, page * PER_PAGE);
 
   return (
     <div className="page-enter space-y-5">
@@ -129,7 +134,7 @@ export default function PaperSets() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {sets.map(setName => (
+              {paged.map(setName => (
                 <PaperSetRow
                   key={setName}
                   setName={setName}
@@ -138,6 +143,26 @@ export default function PaperSets() {
               ))}
             </TableBody>
           </Table>
+        )}
+        {pages > 1 && (
+          <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100 bg-gray-50">
+            <p className="text-xs text-gray-500">
+              Showing {total === 0 ? 0 : Math.min((page - 1) * PER_PAGE + 1, total)}–{Math.min(page * PER_PAGE, total)} of {total} paper sets
+            </p>
+            <div className="flex gap-1">
+              {Array.from({ length: pages }, (_, i) => i + 1).map((p) => (
+                <Button
+                  key={p}
+                  variant={page === p ? 'default' : 'ghost'}
+                  size="icon"
+                  className={`w-7 h-7 text-xs ${page !== p ? 'text-gray-600 hover:bg-gray-200' : ''}`}
+                  onClick={() => setPage(p)}
+                >
+                  {p}
+                </Button>
+              ))}
+            </div>
+          </div>
         )}
       </Card>
     </div>

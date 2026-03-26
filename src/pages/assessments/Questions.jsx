@@ -25,12 +25,17 @@ export default function Questions() {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [page, setPage] = useState(1);
+  const PER_PAGE = 10;
 
   const { data, isLoading, isError } = useQuestions(search ? { q: search } : undefined);
   const deleteMutation = useDeleteQuestion();
 
   // Axios interceptor unwraps res.data — handle array or wrapped shapes
   const questions = Array.isArray(data) ? data : (data?.data ?? data?.questions ?? []);
+  const total = questions.length;
+  const pages = Math.ceil(total / PER_PAGE);
+  const paged = questions.slice((page - 1) * PER_PAGE, page * PER_PAGE);
 
   const handleDelete = () => {
     if (!deleteTarget) return;
@@ -90,7 +95,7 @@ export default function Questions() {
         <Input
           placeholder="Search questions..."
           value={search}
-          onChange={e => setSearch(e.target.value)}
+          onChange={e => { setSearch(e.target.value); setPage(1); }}
           className="pl-9"
         />
       </div>
@@ -100,7 +105,7 @@ export default function Questions() {
         <CardHeader className="px-5 py-4 border-b border-gray-100">
           <CardTitle className="text-base">All Questions</CardTitle>
           <CardDescription>
-            {isLoading ? 'Loading...' : `${questions.length} question${questions.length !== 1 ? 's' : ''}`}
+            {isLoading ? 'Loading...' : `${total} question${total !== 1 ? 's' : ''}`}
           </CardDescription>
         </CardHeader>
 
@@ -125,7 +130,8 @@ export default function Questions() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {questions.map((q, idx) => {
+              {paged.map((q, idx) => {
+                const idx_ = (page - 1) * PER_PAGE + idx;
                 const questionText = q.question_text || q.text || q.question || '';
                 const marks = q.final_score ?? q.base_score ?? q.marks;
                 const hasImage = q.question_image || q.imageUrl;
@@ -133,7 +139,7 @@ export default function Questions() {
                 const tags = Array.isArray(q.tags) ? q.tags : (category ? [category] : []);
                 return (
                 <TableRow key={q.id}>
-                  <TableCell className="text-gray-400 text-xs w-10">{idx + 1}</TableCell>
+                  <TableCell className="text-gray-400 text-xs w-10">{idx_ + 1}</TableCell>
                   <TableCell className="max-w-[280px]">
                     <div className="flex items-start gap-2">
                       {hasImage && <ImageIcon size={13} className="text-gray-400 mt-0.5 flex-shrink-0" />}
@@ -197,6 +203,26 @@ export default function Questions() {
               })}
             </TableBody>
           </Table>
+        )}
+        {pages > 1 && (
+          <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100 bg-gray-50">
+            <p className="text-xs text-gray-500">
+              Showing {total === 0 ? 0 : Math.min((page - 1) * PER_PAGE + 1, total)}–{Math.min(page * PER_PAGE, total)} of {total} questions
+            </p>
+            <div className="flex gap-1">
+              {Array.from({ length: pages }, (_, i) => i + 1).map((p) => (
+                <Button
+                  key={p}
+                  variant={page === p ? 'default' : 'ghost'}
+                  size="icon"
+                  className={`w-7 h-7 text-xs ${page !== p ? 'text-gray-600 hover:bg-gray-200' : ''}`}
+                  onClick={() => setPage(p)}
+                >
+                  {p}
+                </Button>
+              ))}
+            </div>
+          </div>
         )}
       </Card>
     </div>

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Download, AlertTriangle, ArrowRight } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -20,6 +21,12 @@ const URGENCY_VARIANTS = {
 };
 
 export default function RiskMonitor() {
+  const [page, setPage] = useState(1);
+  const PER_PAGE = 8;
+  const total = AT_RISK_STUDENTS.length;
+  const pages = Math.ceil(total / PER_PAGE);
+  const paged = AT_RISK_STUDENTS.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+
   return (
     <div className="page-enter space-y-5">
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
@@ -151,7 +158,7 @@ export default function RiskMonitor() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {AT_RISK_STUDENTS.map(s => (
+            {paged.map(s => (
               <TableRow key={s.id}>
                 <TableCell>
                   <div className="text-sm font-medium text-gray-900">{s.name}</div>
@@ -177,6 +184,26 @@ export default function RiskMonitor() {
             ))}
           </TableBody>
         </Table>
+        {pages > 1 && (
+          <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100 bg-gray-50">
+            <p className="text-xs text-gray-500">
+              Showing {total === 0 ? 0 : Math.min((page - 1) * PER_PAGE + 1, total)}–{Math.min(page * PER_PAGE, total)} of {total} students
+            </p>
+            <div className="flex gap-1">
+              {Array.from({ length: pages }, (_, i) => i + 1).map((p) => (
+                <Button
+                  key={p}
+                  variant={page === p ? 'default' : 'ghost'}
+                  size="icon"
+                  className={`w-7 h-7 text-xs ${page !== p ? 'text-gray-600 hover:bg-gray-200' : ''}`}
+                  onClick={() => setPage(p)}
+                >
+                  {p}
+                </Button>
+              ))}
+            </div>
+          </div>
+        )}
       </Card>
     </div>
   );

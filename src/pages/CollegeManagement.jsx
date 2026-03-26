@@ -250,11 +250,16 @@ export default function CollegeManagement() {
   const [showAdd, setShowAdd]         = useState(false);
   const [editTarget, setEditTarget]   = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [page, setPage]               = useState(1);
+  const PER_PAGE = 8;
 
   const { data, isLoading, isError } = useColleges();
 
   // `select` in useColleges normalises the response to a plain array
   const colleges = data ?? [];
+  const total  = colleges.length;
+  const pages  = Math.ceil(total / PER_PAGE);
+  const paged  = colleges.slice((page - 1) * PER_PAGE, page * PER_PAGE);
 
   const totalStudents = colleges.reduce((a, c) => a + (c.students ?? 0), 0);
   const avgEI = colleges.length
@@ -334,13 +339,13 @@ export default function CollegeManagement() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {colleges.length === 0 ? (
+            {paged.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="text-center py-10 text-gray-400">
                   No colleges found. Add one to get started.
                 </TableCell>
               </TableRow>
-            ) : colleges.map(c => (
+            ) : paged.map(c => (
               <TableRow key={c.id} className="hover:bg-gray-50">
 
                 {/* Name */}
@@ -421,6 +426,26 @@ export default function CollegeManagement() {
             ))}
           </TableBody>
         </Table>
+        {pages > 1 && (
+          <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100 bg-gray-50">
+            <p className="text-xs text-gray-500">
+              Showing {total === 0 ? 0 : Math.min((page - 1) * PER_PAGE + 1, total)}–{Math.min(page * PER_PAGE, total)} of {total} colleges
+            </p>
+            <div className="flex gap-1">
+              {Array.from({ length: pages }, (_, i) => i + 1).map((p) => (
+                <Button
+                  key={p}
+                  variant={page === p ? 'default' : 'ghost'}
+                  size="icon"
+                  className={`w-7 h-7 text-xs ${page !== p ? 'text-gray-600 hover:bg-gray-200' : ''}`}
+                  onClick={() => setPage(p)}
+                >
+                  {p}
+                </Button>
+              ))}
+            </div>
+          </div>
+        )}
       </Card>
     </div>
   );
