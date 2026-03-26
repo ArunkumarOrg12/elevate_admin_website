@@ -14,7 +14,7 @@ const collegesApi = {
     api.post(ADMIN_PATHS.COLLEGES, data),
 
   update: (id, data) =>
-    api.put(`${ADMIN_PATHS.COLLEGES}/${id}`, data),
+     api.patch(`${ADMIN_PATHS.COLLEGES}/${id}`, data),
 
   remove: (id) =>
     api.delete(`${ADMIN_PATHS.COLLEGES}/${id}`),

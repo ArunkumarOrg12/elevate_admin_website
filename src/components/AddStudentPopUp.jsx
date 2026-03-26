@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Dialog, DialogContent, DialogHeader,
   DialogTitle, DialogDescription, DialogFooter,
@@ -15,8 +15,11 @@ import { useGetPrograms } from "../controllers/programController";
 
 const GENDERS = ["Male", "Female", "Other"];
 
+
+
 // Generate year options for batch start (last 10 years)
 const currentYear = new Date().getFullYear();
+// Only allow batch years up to current year (no future batches)
 const START_YEARS = Array.from({ length: 10 }, (_, i) => currentYear - i);
 const DURATIONS = [3, 4, 5]; // years
 
@@ -52,21 +55,78 @@ const { data: programs = [], isLoading: programsLoading } = useGetPrograms(
     ? `${form.batch_start}-${Number(form.batch_start) + Number(form.batch_duration)}`
     : "";
 
- const validate = () => {
+const validate = () => {
   const e = {};
-  if (!form.first_name.trim())        e.first_name       = "Required";
-  if (!form.last_name.trim())         e.last_name        = "Required";
-  if (!form.email.trim())             e.email            = "Required";
-  else if (!/\S+@\S+\.\S+/.test(form.email)) e.email    = "Enter a valid email";
-  if (!form.department_id)            e.department_id    = "Select a department";
-  if (!form.program_id)               e.program_id       = "Select a program";   // ← add
-  if (!form.batch_start)              e.batch_start      = "Select start year";
-  if (!form.current_semester)         e.current_semester = "Required";
-  if (!form.date_of_birth)            e.date_of_birth    = "Required";
-  if (!form.gender)                   e.gender           = "Required";
+
+  // ... your existing validations ...
+
+  // ✅ Batch start can't be in the future
+  if (form.batch_start && Number(form.batch_start) > currentYear) {
+    e.batch_start = "Batch cannot start in the future";
+  }
+
+  // ✅ Batch must not have fully ended
+  if (form.batch_start && form.batch_duration) {
+    const endYear = Number(form.batch_start) + Number(form.batch_duration);
+    if (endYear < currentYear) {
+      e.batch_start = `This batch ended in ${endYear}. Cannot add students to a completed batch.`;
+    }
+  }
+
+  // ✅ Semester must be in the valid range for selected batch
+  const validSems = getAvailableSemesters();
+  if (form.current_semester && !validSems.includes(Number(form.current_semester))) {
+    e.current_semester = "Semester is not valid for the selected batch and current date";
+  }
+
+  // ✅ Age validation — must be between 15 and 35
+  if (form.date_of_birth) {
+    const dob = new Date(form.date_of_birth);
+    const age = (new Date() - dob) / (1000 * 60 * 60 * 24 * 365.25);
+    if (age < 15) e.date_of_birth = "Student must be at least 15 years old";
+    if (age > 35) e.date_of_birth = "Age seems too high — please verify";
+  }
+
+  // ✅ Email must match college domain (optional but professional)
+  // Uncomment and set your domain if you want this:
+  // if (form.email && !form.email.endsWith("@vit.ac.in")) {
+  //   e.email = "Must use official college email (@vit.ac.in)";
+  // }
+
   setErrors(e);
   return Object.keys(e).length === 0;
 };
+
+const getAvailableSemesters = () => {
+  if (!form.batch_start || !form.batch_duration) return [];
+
+  const startYear     = Number(form.batch_start);
+  const duration      = Number(form.batch_duration);
+  const totalSems     = duration * 2;
+  const now           = new Date();
+  const currentYear   = now.getFullYear();
+  const currentMonth  = now.getMonth() + 1; // 1–12
+
+  if (startYear > currentYear) return []; // future batch — no semesters yet
+
+  // How many 6-month blocks have elapsed since batch start (July of start year)?
+  // Sem 1: Jul–Dec of startYear
+  // Sem 2: Jan–Jun of startYear+1
+  // Sem 3: Jul–Dec of startYear+1 ...
+  const monthsElapsed =
+    (currentYear - startYear) * 12 + (currentMonth - 7); // July = month 7 = sem1 start
+
+  // Each semester = 6 months. +1 because we're *in* the current semester
+  const currentSem = Math.floor(monthsElapsed / 6) + 1;
+
+  // Clamp between 1 and totalSems
+  const maxSem = Math.min(Math.max(currentSem, 1), totalSems);
+
+  return Array.from({ length: maxSem }, (_, i) => i + 1);
+};
+
+
+  
 
   const handleSubmit = () => {
     if (!validate()) return;
@@ -114,6 +174,13 @@ const { data: programs = [], isLoading: programsLoading } = useGetPrograms(
   const err = (key) => errors[key] && (
     <p className="text-xs text-red-500 mt-0.5">{errors[key]}</p>
   );
+
+  useEffect(() => {
+  const validSems = getAvailableSemesters();
+  if (!validSems.includes(Number(form.current_semester))) {
+    setForm((p) => ({ ...p, current_semester: "" }));
+  }
+}, [form.batch_start, form.batch_duration]);
 
   // ── Success screen ──────────────────────────────────────────────
   if (createdStudent) {
@@ -189,7 +256,11 @@ const { data: programs = [], isLoading: programsLoading } = useGetPrograms(
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label className="mb-2">Date of Birth</Label>
-              <Input type="date" {...field("date_of_birth")} />
+              <Input
+  type="date"
+  max={new Date().toISOString().split("T")[0]} // ✅ prevents future dates
+  {...field("date_of_birth")}
+/>
               {err("date_of_birth")}
             </div>
             <div>
@@ -312,11 +383,25 @@ const { data: programs = [], isLoading: programsLoading } = useGetPrograms(
               <SelectTrigger className={errors.current_semester ? "border-red-400" : ""}>
                 <SelectValue placeholder="Select semester" />
               </SelectTrigger>
-              <SelectContent>
-                {Array.from({ length: 8 }, (_, i) => i + 1).map((s) => (
-                  <SelectItem key={s} value={String(s)}>Semester {s}</SelectItem>
-                ))}
-              </SelectContent>
+             <SelectContent>
+  {getAvailableSemesters().map((s) => {
+    const isLast = s === getAvailableSemesters().length;
+    return (
+      <SelectItem key={s} value={String(s)}>
+        Semester {s} {isLast ? "· Current" : "· Completed"}
+      </SelectItem>
+    );
+  })}
+  {getAvailableSemesters().length === 0 && (
+    <div className="px-3 py-2 text-xs text-gray-400">
+      {!form.batch_start
+        ? "Select batch start year first"
+        : Number(form.batch_start) > currentYear
+        ? "Future batch — no active semesters"
+        : "No active semesters for this batch"}
+    </div>
+  )}
+</SelectContent>
             </Select>
             {err("current_semester")}
           </div>
@@ -332,7 +417,7 @@ const { data: programs = [], isLoading: programsLoading } = useGetPrograms(
 
         {createStudentMutation.isError && (
           <p className="text-sm text-red-500 mt-2 text-center">
-            {createStudentMutation.error?.response?.data?.message ||
+            {createStudentMutation.error?.response?.data?.error ||
              createStudentMutation.error?.message ||
              "Something went wrong. Please try again."}
           </p>
