@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   Dialog, DialogContent, DialogHeader,
   DialogTitle, DialogDescription, DialogFooter,
@@ -22,11 +22,14 @@ import {
 
 import { getEIColor, getEIBgColor, getEICategory, formatDate } from "../utils/helpers";
 
-import { useGetAllStudents, useDeleteStudent } from "../controllers/studentsController";
+import { useGetAllStudents, useDeleteStudent, useBulkUploadStudents } from "../controllers/studentsController";
 import AddStudentDialog from "../components/AddStudentPopUp";
 import StudentDetailDialog from "../components/studentDetailDialog";
 import { useAuth } from "../hooks/useAuth";
 import EditStudentDialog from "../components/UpdateStudentPopUp";
+import downloadCSV from "../utils/downloadCSV";
+import { handleFileUpload } from "../utils/handleFileUpload";
+import { handleDownloadTemplate } from "../utils/studentTemplateDownload";
 
 
 const DEPTS = ["All", "CSE", "ECE", "MECH", "CIVIL", "IT", "EEE", "MBA", "MCA"];
@@ -156,6 +159,24 @@ export default function Students() {
     { key: "actions",        label: "ACTIONS"         },
   ];
 
+  const bulkUploadStudents=useBulkUploadStudents();
+
+  const fileInputRef=useRef(null);
+
+
+  const handleImportedData = (data) => {
+  console.log("Imported students:", data);
+  const mapped = data.map((student) => ({
+    ...student,
+    college_id: user?.college_id, // assign logged-in user's college
+    department_id: student.department_id || DEFAULT_DEPARTMENT_ID, // optional fallback
+  }));
+
+  bulkUploadStudents.mutate(mapped);
+  
+
+};
+
   if (isLoading) return <div className="p-8 text-gray-500">Loading students…</div>;
   if (isError)   return <div className="p-8 text-red-500">Error loading students. Please refresh.</div>;
 
@@ -242,9 +263,22 @@ export default function Students() {
           <Button variant="secondary" size="sm">
             <SlidersHorizontal size={14} /> Advanced Filters
           </Button>
-          <Button size="sm">
+          <Button size="sm" onClick={() => fileInputRef?.current?.click()}>
+            <input
+  type="file"
+  accept=".csv, .xlsx, .xls"
+  ref={fileInputRef}
+  onChange={(e) => handleFileUpload(e, handleImportedData)}
+  style={{ display: "none" }}
+/>
+            <Download size={14} /> Import
+          </Button>
+          <Button size="sm" onClick={()=>downloadCSV(students)} >
             <Download size={14} /> Export
           </Button>
+         <Button variant="secondary" size="sm" onClick={() => handleDownloadTemplate(user?.college_id)}>
+  <Download size={14} /> Template
+</Button>
         </div>
       </div>
 
@@ -335,7 +369,7 @@ export default function Students() {
                     </div>
                     <div>
                       <div className="text-sm font-medium text-gray-900">{s.name}</div>
-                      <div className="text-xs text-gray-400">{s.roll} · {s.dept} · {s.year}</div>
+                      <div className="text-xs text-gray-400">{s.roll} · {s.email} ·  {s.dept} · {s.year}</div>
                     </div>
                   </div>
                 </TableCell>
