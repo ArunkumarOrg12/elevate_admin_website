@@ -94,11 +94,12 @@ export default function Sidebar() {
         {/* Logo */}
         <div className="flex items-center px-4 py-5 border-b border-white/10">
           <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center">
-            <GraduationCap size={18} className="text-white" />
+            {/* <GraduationCap size={18} className="text-white" /> */}
+            <img src="./Logo whitevector.png" alt="Logo" />
           </div>
           {showLabels && (
             <div className="ml-3 overflow-hidden flex-1">
-              <div className="text-white font-bold text-sm leading-tight">EI Portal</div>
+              <div className="text-white font-bold text-sm leading-tight">ELEVATE Admin Portal</div>
               <div className="text-gray-400 text-xs">Employability Intelligence</div>
             </div>
           )}
