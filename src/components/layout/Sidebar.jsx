@@ -9,6 +9,7 @@ import {
 import { SidebarContext } from '../../context/SidebarContext';
 import { useAuth } from '../../hooks/useAuth';
 import { ROLES } from '../../constants/roles';
+import { useDashboardStats } from '../../controllers/dashboardController';
 
 const ASSESSMENT_CHILDREN = [
   { icon: RefreshCw,   label: 'Cycles',        path: '/assessments',            roles: [ROLES.SUPER_ADMIN, ROLES.COLLEGE_ADMIN], exact: true },
@@ -20,7 +21,7 @@ const ASSESSMENT_CHILDREN = [
 
 const NAV_ITEMS = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard', roles: [ROLES.SUPER_ADMIN, ROLES.COLLEGE_ADMIN] },
-  { icon: Users, label: 'Students', path: '/students', badge: '1.8k', roles: [ROLES.SUPER_ADMIN, ROLES.COLLEGE_ADMIN] },
+  { icon: Users, label: 'Students', path: '/students', roles: [ROLES.SUPER_ADMIN, ROLES.COLLEGE_ADMIN] },
   {
     icon: ClipboardList,
     label: 'Assessments',
@@ -31,7 +32,7 @@ const NAV_ITEMS = [
   { icon: Building2, label: 'Departments', path: '/departments', roles: [ROLES.SUPER_ADMIN, ROLES.COLLEGE_ADMIN] },
   { icon: Building2, label: 'Programs', path: '/programs', roles: [ROLES.SUPER_ADMIN, ROLES.COLLEGE_ADMIN] },
   { icon: BarChart3, label: 'Analytics', path: '/analytics', roles: [ROLES.SUPER_ADMIN, ROLES.COLLEGE_ADMIN] },
-  { icon: AlertTriangle, label: 'Risk Monitor', path: '/risk-monitor', badge: '357', badgeDanger: true, roles: [ROLES.SUPER_ADMIN, ROLES.COLLEGE_ADMIN] },
+  { icon: AlertTriangle, label: 'Risk Monitor', path: '/risk-monitor', badgeDanger: true, roles: [ROLES.SUPER_ADMIN, ROLES.COLLEGE_ADMIN] },
   // { icon: FileText, label: 'Reports', path: '/reports', roles: [ROLES.SUPER_ADMIN, ROLES.COLLEGE_ADMIN] },
   { icon: Bell, label: 'Notifications', path: '/notifications', roles: [ROLES.SUPER_ADMIN, ROLES.COLLEGE_ADMIN] },
   { icon: Settings, label: 'Settings', path: '/settings', roles: [ROLES.SUPER_ADMIN, ROLES.COLLEGE_ADMIN] },
@@ -44,6 +45,18 @@ export default function Sidebar() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const { data: stats } = useDashboardStats({});
+
+  const formatBadgeNumber = (num) => {
+    if (num == null) return null;
+    if (num >= 100000) {
+      return (num / 100000).toFixed(1).replace(/\.0$/, '') + 'L';
+    }
+    if (num >= 1000) {
+      return (num / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
+    }
+    return num.toString();
+  };
 
   // Track which parent item is expanded (by path)
   const [expandedItem, setExpandedItem] = useState(() => {
@@ -52,7 +65,15 @@ export default function Sidebar() {
     return null;
   });
 
-  const visibleItems = NAV_ITEMS.filter(item => item.roles.includes(user?.role));
+  const visibleItems = NAV_ITEMS.filter(item => item.roles.includes(user?.role)).map(item => {
+    if (item.label === 'Students' && stats?.total_students != null) {
+      return { ...item, badge: formatBadgeNumber(stats.total_students) };
+    }
+    if (item.label === 'Risk Monitor' && stats?.high_risk_count != null && stats.high_risk_count > 0) {
+      return { ...item, badge: formatBadgeNumber(stats.high_risk_count) };
+    }
+    return item;
+  });
 
   // Show labels when expanded on desktop OR when open as mobile drawer
   const showLabels = !collapsed || mobileOpen;
