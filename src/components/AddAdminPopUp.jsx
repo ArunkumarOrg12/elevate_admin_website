@@ -12,7 +12,7 @@ import {
 } from "../components/ui/select";
 import { useCreateAdmin, useGetColleges } from "../controllers/adminController";
 
-const ROLES = ["superadmin", "college_admin"];
+const ROLES = ["superadmin", "college_admin","college_faculty"];
 
 const EMPTY_FORM = {
   name: "",

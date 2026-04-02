@@ -1,14 +1,19 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import api from "../services/api";
-import { ADMIN_PATHS, QUERY_KEYS, STUDENT_API } from "../constants/apiUrlConstant";
+import {
+  ADMIN_PATHS,
+  QUERY_KEYS,
+  STUDENT_API,
+} from "../constants/apiUrlConstant";
 
 // ── API functions ─────────────────────────────────────────────────────────────
 const studentsApi = {
-  getAll:      (params) => api.get(STUDENT_API.GET_ALL_STUDENTS, { params }),
-  getById:     (id)     => api.get(`${STUDENT_API.GET_ALL_STUDENTS}/${id}`),
-  create:      (data)   => api.post(STUDENT_API.CREATE_STUDENT, data),
-  update:      (id, data) => api.put(`${STUDENT_API.GET_ALL_STUDENTS}/${id}`, data),
-  remove:      (id)     => api.delete(`${STUDENT_API.GET_ALL_STUDENTS}/${id}`),
+  getAll: (params) => api.get(STUDENT_API.GET_ALL_STUDENTS, { params }),
+  getById: (id) => api.get(`${STUDENT_API.GET_ALL_STUDENTS}/${id}`),
+  create: (data) => api.post(STUDENT_API.CREATE_STUDENT, data),
+  update: (id, data) => api.put(`${STUDENT_API.GET_ALL_STUDENTS}/${id}`, data),
+  remove: (id) => api.delete(`${STUDENT_API.GET_ALL_STUDENTS}/${id}`),
 };
 
 // ── Get all students ──────────────────────────────────────────────────────────
@@ -44,12 +49,24 @@ export const useCreateStudent = () => {
       const response = await api.post(STUDENT_API.CREATE_STUDENT, studentData);
       return response.data ?? response;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["students"] });
+      toast.success("Student created successfully!", {
+        description: `${data.first_name} ${data.last_name} has been added.`,
+      });
     },
     onError: (error) => {
+      const message =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to create student";
+      const details =
+        error?.response?.data?.error ||
+        "Please check your input and try again.";
+      toast.error(message, {
+        description: details,
+      });
       console.error("Failed to create student:", error);
-      console.error("Error response:", error?.response?.data); 
     },
   });
 };
@@ -59,12 +76,29 @@ export const useUpdateStudent = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...data }) => {
-      const response = await api.put(`${STUDENT_API.GET_ALL_STUDENTS}/${id}`, data);
+      const response = await api.put(
+        `${STUDENT_API.GET_ALL_STUDENTS}/${id}`,
+        data,
+      );
       return response.data ?? response;
     },
-    onSuccess: (_, { id }) => {
+    onSuccess: (data, { id }) => {
       queryClient.invalidateQueries({ queryKey: ["students"] });
       queryClient.invalidateQueries({ queryKey: ["students", id] });
+      toast.success("Student updated successfully!", {
+        description: "Changes have been saved.",
+      });
+    },
+    onError: (error) => {
+      const message =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to update student";
+      const details = error?.response?.data?.error || "Please try again.";
+      toast.error(message, {
+        description: details,
+      });
+      console.error("Failed to update student:", error);
     },
   });
 };
@@ -74,11 +108,27 @@ export const useDeleteStudent = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (id) => {
-      const response = await api.delete(`${STUDENT_API.GET_ALL_STUDENTS}/${id}`);
+      const response = await api.delete(
+        `${STUDENT_API.GET_ALL_STUDENTS}/${id}`,
+      );
       return response.data ?? response;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["students"] });
+      toast.success("Student deleted successfully!", {
+        description: "The student record has been removed.",
+      });
+    },
+    onError: (error) => {
+      const message =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to delete student";
+      const details = error?.response?.data?.error || "Please try again.";
+      toast.error(message, {
+        description: details,
+      });
+      console.error("Failed to delete student:", error);
     },
   });
 };
@@ -89,7 +139,7 @@ export const useGetDepartments = (collegeId) => {
     queryKey: ["departments", collegeId],
     queryFn: async () => {
       const response = await api.get(STUDENT_API.DEPARTMENTS, {
-        params: { college_id: collegeId }
+        params: { college_id: collegeId },
       });
       // interceptor already unwraps, so response IS the data object
       return response?.departments ?? [];
@@ -118,6 +168,5 @@ export const useBulkUploadStudents = () => {
     },
   });
 };
-
 
 export default studentsApi;

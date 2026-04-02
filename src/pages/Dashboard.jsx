@@ -1,20 +1,22 @@
-import { RefreshCw, Download } from 'lucide-react';
-import { useAuth } from '../hooks/useAuth';
-import { Button } from '@/components/ui/button';
-import OverviewStats from '../components/dashboard/OverviewStats';
-import QuickMetrics from '../components/dashboard/QuickMetrics';
-import EITrendChart from '../components/dashboard/EITrendChart';
-import RiskDistribution from '../components/dashboard/RiskDistribution';
-import DepartmentComparison from '../components/dashboard/DepartmentComparison';
-import PlacementProgress from '../components/dashboard/PlacementProgress';
-import DepartmentSummary from '../components/dashboard/DepartmentSummary';
-import RecentActivity from '../components/dashboard/RecentActivity';
-import TopPerformers from '../components/dashboard/TopPerformers';
+import { RefreshCw, Download } from "lucide-react";
+import { useAuth } from "../hooks/useAuth";
+import RoleGuard from "../components/common/RoleGuard";
+import { ROLES } from "../constants/roles";
+import { Button } from "@/components/ui/button";
+import OverviewStats from "../components/dashboard/OverviewStats";
+import QuickMetrics from "../components/dashboard/QuickMetrics";
+import EITrendChart from "../components/dashboard/EITrendChart";
+import RiskDistribution from "../components/dashboard/RiskDistribution";
+import DepartmentComparison from "../components/dashboard/DepartmentComparison";
+import PlacementProgress from "../components/dashboard/PlacementProgress";
+import DepartmentSummary from "../components/dashboard/DepartmentSummary";
+import RecentActivity from "../components/dashboard/RecentActivity";
+import TopPerformers from "../components/dashboard/TopPerformers";
 
 export default function Dashboard() {
   const { user, isSuperAdmin } = useAuth();
   const subtitle = isSuperAdmin
-    ? 'All Institutions · AY 2024-25'
+    ? "All Institutions · AY 2024-25"
     : `${user?.college?.name} · AY 2024-25 · Batch 2025`;
 
   return (
@@ -22,19 +24,28 @@ export default function Dashboard() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
         <div>
-          <h1 className="text-xl md:text-2xl font-bold text-gray-900" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif' }}>
+          <h1
+            className="text-xl md:text-2xl font-bold text-gray-900"
+            style={{ fontFamily: "Plus Jakarta Sans, sans-serif" }}
+          >
             Dashboard Overview
           </h1>
           <p className="text-gray-500 text-sm mt-0.5">{subtitle}</p>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
-          <span className="hidden sm:inline text-xs text-gray-400">Last synced: just now</span>
-          <Button variant="secondary" size="sm">
-            <RefreshCw size={14} /> Refresh
-          </Button>
-          <Button size="sm">
-            <Download size={14} /> Export
-          </Button>
+          <span className="hidden sm:inline text-xs text-gray-400">
+            Last synced: just now
+          </span>
+          <RoleGuard allowedRoles={[ROLES.SUPER_ADMIN, ROLES.COLLEGE_ADMIN]}>
+            <Button variant="secondary" size="sm">
+              <RefreshCw size={14} /> Refresh
+            </Button>
+          </RoleGuard>
+          <RoleGuard allowedRoles={[ROLES.SUPER_ADMIN, ROLES.COLLEGE_ADMIN]}>
+            <Button size="sm">
+              <Download size={14} /> Export
+            </Button>
+          </RoleGuard>
         </div>
       </div>
 

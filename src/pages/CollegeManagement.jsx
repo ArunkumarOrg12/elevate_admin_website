@@ -1,6 +1,6 @@
 // CollegeManagement.jsx
 import { useState } from 'react';
-import { Plus, Edit2, Trash2, Building, X, Globe, Mail, Phone, MapPin, Hash } from 'lucide-react';
+import { Plus, Edit2, Trash2, Building, X, Globe, Mail, Phone, MapPin, Hash, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -89,6 +89,8 @@ function CollegeFormDialog({ open, onOpenChange, college }) {
   const apiError =
     createMutation.error?.response?.data?.message ||
     updateMutation.error?.response?.data?.message;
+
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -266,6 +268,55 @@ export default function CollegeManagement() {
   if (isLoading) return <div className="p-8 text-gray-500">Loading colleges…</div>;
   if (isError)   return <div className="p-8 text-red-500">Error loading colleges. Please refresh.</div>;
 
+      const exportCollegesToCSV = () => {
+  if (!colleges.length) return;
+
+  const headers = [
+    "Name",
+    "Code",
+    "Domain",
+    "Address",
+    "Contact Email",
+    "Contact Phone",
+    "Status",
+    "Students",
+    "Avg EI",
+  ];
+
+  const rows = colleges.map((c) => [
+    c.name,
+    c.code,
+    c.domain ?? "",
+    c.address ?? "",
+    c.contact_email ?? "",
+    c.contact_phone ?? "",
+    c.is_active ? "Active" : "Inactive",
+    c.students ?? 0,
+    c.avgEI ?? 0,
+  ]);
+
+  const csvContent =
+    [headers, ...rows]
+      .map((row) => row.map((val) => `"${val}"`).join(","))
+      .join("\n");
+
+  const blob = new Blob([csvContent], {
+    type: "text/csv;charset=utf-8;",
+  });
+
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+
+  const fileName = `colleges_${new Date().toISOString().slice(0, 10)}.csv`;
+
+  link.href = url;
+  link.setAttribute("download", fileName);
+  document.body.appendChild(link);
+  link.click();
+
+  document.body.removeChild(link);
+};
+
   return (
     <div className="page-enter space-y-5">
 
@@ -305,9 +356,14 @@ export default function CollegeManagement() {
             {colleges.length} institution{colleges.length !== 1 ? 's' : ''} on the platform
           </p>
         </div>
+         <div className="flex gap-2 flex-shrink-0">
         <Button size="sm" className="flex-shrink-0 self-start" onClick={() => setShowAdd(true)}>
           <Plus size={14} /> Add College
         </Button>
+         <Button size="sm" onClick={exportCollegesToCSV}>
+  <Download size={14} /> Export
+</Button>
+</div>
       </div>
 
       {/* Summary cards */}

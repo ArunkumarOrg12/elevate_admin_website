@@ -149,6 +149,54 @@ function formatDate(date) {
   }).format(date);
 }
 
+const exportToCSV = () => {
+  // Choose what data to export (filtered or all)
+  const dataToExport = filtered; // or admins
+
+  if (!dataToExport.length) return;
+
+  const headers = [
+    "Name",
+    "Email",
+    "Role",
+    "College",
+    "Last Login",
+    "Created At",
+  ];
+
+  const rows = dataToExport.map((a) => [
+    a.name,
+    a.email,
+    a.role.replace("_", " "),
+    a.college,
+    a.lastLogin ? formatDate(a.lastLogin) : "Never",
+    formatDate(a.createdAt),
+  ]);
+
+  // Convert to CSV string
+  const csvContent =
+    [headers, ...rows]
+      .map((row) => row.map((val) => `"${val}"`).join(","))
+      .join("\n");
+
+  // Create blob
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+
+  // Create download link
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+
+  const fileName = `admins_${new Date().toISOString().slice(0,10)}.csv`;
+
+
+  link.href = url;
+  link.setAttribute("download", fileName);
+  document.body.appendChild(link);
+  link.click();
+
+  document.body.removeChild(link);
+};
+
   return (
     <div className="page-enter space-y-5">
 
@@ -229,9 +277,9 @@ function formatDate(date) {
           <Button variant="secondary" size="sm">
             <SlidersHorizontal size={14} /> Advanced Filters
           </Button>
-          <Button size="sm">
-            <Download size={14} /> Export
-          </Button>
+          <Button size="sm" onClick={exportToCSV}>
+  <Download size={14} /> Export
+</Button>
         </div>
       </div>
 

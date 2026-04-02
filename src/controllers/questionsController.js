@@ -1,6 +1,7 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import api from '../services/api';
-import { ADMIN_PATHS, QUERY_KEYS } from '../constants/apiUrlConstant';
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import api from "../services/api";
+import { ADMIN_PATHS, QUERY_KEYS } from "../constants/apiUrlConstant";
 
 // ── Questions API ──────────────────────────────────────────────────────────────
 const questionsApi = {
@@ -12,30 +13,49 @@ const questionsApi = {
   remove: (id) => api.delete(`${ADMIN_PATHS.QUESTIONS}/${id}`),
   // Backend registers these as PUT — used by both AddQuestion (initial) and EditQuestion (update)
   uploadQuestionImage: (id, formData) =>
-    api.put(`${ADMIN_PATHS.QUESTIONS.replace('/questions', '')}/upload/${id}/question-image`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    }),
+    api.put(
+      `${ADMIN_PATHS.QUESTIONS.replace("/questions", "")}/upload/${id}/question-image`,
+      formData,
+      {
+        headers: { "Content-Type": "multipart/form-data" },
+      },
+    ),
   uploadOptionImages: (id, formData) =>
-    api.put(`${ADMIN_PATHS.QUESTIONS.replace('/questions', '')}/upload/${id}/option-image`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    }),
+    api.put(
+      `${ADMIN_PATHS.QUESTIONS.replace("/questions", "")}/upload/${id}/option-image`,
+      formData,
+      {
+        headers: { "Content-Type": "multipart/form-data" },
+      },
+    ),
   // Aliases used by EditQuestion hooks (same endpoint)
   updateQuestionImage: (id, formData) =>
-    api.put(`${ADMIN_PATHS.QUESTIONS.replace('/questions', '')}/upload/${id}/question-image`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    }),
+    api.put(
+      `${ADMIN_PATHS.QUESTIONS.replace("/questions", "")}/upload/${id}/question-image`,
+      formData,
+      {
+        headers: { "Content-Type": "multipart/form-data" },
+      },
+    ),
   updateOptionImages: (id, formData) =>
-    api.put(`${ADMIN_PATHS.QUESTIONS.replace('/questions', '')}/upload/${id}/option-image`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    }),
+    api.put(
+      `${ADMIN_PATHS.QUESTIONS.replace("/questions", "")}/upload/${id}/option-image`,
+      formData,
+      {
+        headers: { "Content-Type": "multipart/form-data" },
+      },
+    ),
 };
 
 // ── Paper Sets API ─────────────────────────────────────────────────────────────
 const paperSetsApi = {
   getAll: () => api.get(ADMIN_PATHS.PAPER_SETS),
-  getQuestions: (setId) => api.get(`${ADMIN_PATHS.PAPER_SETS}/${setId}/questions`),
-  addQuestion: (setId, data) => api.post(`${ADMIN_PATHS.PAPER_SETS}/${setId}/questions`, data),
-  removeQuestion: (setId, qId) => api.delete(`${ADMIN_PATHS.PAPER_SETS}/${setId}/questions/${qId}`),
+  getQuestions: (setId) =>
+    api.get(`${ADMIN_PATHS.PAPER_SETS}/${setId}/questions`),
+  addQuestion: (setId, data) =>
+    api.post(`${ADMIN_PATHS.PAPER_SETS}/${setId}/questions`, data),
+  removeQuestion: (setId, qId) =>
+    api.delete(`${ADMIN_PATHS.PAPER_SETS}/${setId}/questions/${qId}`),
 };
 
 // ── Question Bank API ──────────────────────────────────────────────────────────
@@ -52,7 +72,8 @@ const cyclesApi = {
   getById: (id) => api.get(`${ADMIN_PATHS.CYCLES}/${id}`),
   create: (data) => api.post(ADMIN_PATHS.CYCLES, data),
   remove: (id) => api.delete(`${ADMIN_PATHS.CYCLES}/${id}`),
-  changeStatus: (id, data) => api.patch(`${ADMIN_PATHS.CYCLES}/${id}/status`, data),
+  changeStatus: (id, data) =>
+    api.patch(`${ADMIN_PATHS.CYCLES}/${id}/status`, data),
   publish: (id) => api.post(`${ADMIN_PATHS.CYCLES}/${id}/publish`),
   unpublish: (id) => api.post(`${ADMIN_PATHS.CYCLES}/${id}/unpublish`),
   getResults: (id) => api.get(`${ADMIN_PATHS.CYCLES}/${id}/results`),
@@ -70,7 +91,7 @@ export function useQuestions(params) {
 
 export function useQuestionSearch(params) {
   return useQuery({
-    queryKey: [...QUERY_KEYS.QUESTIONS, 'search', params],
+    queryKey: [...QUERY_KEYS.QUESTIONS, "search", params],
     queryFn: () => questionsApi.search(params),
     enabled: !!params?.q,
   });
@@ -88,7 +109,23 @@ export function useCreateQuestion() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: questionsApi.create,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: QUERY_KEYS.QUESTIONS }),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.QUESTIONS });
+      toast.success("Question created successfully!", {
+        description: "Your question has been added to the bank.",
+      });
+    },
+    onError: (error) => {
+      const message =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to create question";
+      const details =
+        error?.response?.data?.error ||
+        "Please check the question details and try again.";
+      toast.error(message, { description: details });
+      console.error("Failed to create question:", error);
+    },
   });
 }
 
@@ -96,9 +133,23 @@ export function useUpdateQuestion() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, ...data }) => questionsApi.update(id, data),
-    onSuccess: (_, { id }) => {
+    onSuccess: (data, { id }) => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.QUESTIONS });
-      queryClient.invalidateQueries({ queryKey: [...QUERY_KEYS.QUESTIONS, id] });
+      queryClient.invalidateQueries({
+        queryKey: [...QUERY_KEYS.QUESTIONS, id],
+      });
+      toast.success("Question updated successfully!", {
+        description: "Changes have been saved.",
+      });
+    },
+    onError: (error) => {
+      const message =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to update question";
+      const details = error?.response?.data?.error || "Please try again.";
+      toast.error(message, { description: details });
+      console.error("Failed to update question:", error);
     },
   });
 }
@@ -106,9 +157,12 @@ export function useUpdateQuestion() {
 export function useUpdateQuestionImage() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, formData }) => questionsApi.updateQuestionImage(id, formData),
+    mutationFn: ({ id, formData }) =>
+      questionsApi.updateQuestionImage(id, formData),
     onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: [...QUERY_KEYS.QUESTIONS, id] });
+      queryClient.invalidateQueries({
+        queryKey: [...QUERY_KEYS.QUESTIONS, id],
+      });
     },
   });
 }
@@ -116,9 +170,12 @@ export function useUpdateQuestionImage() {
 export function useUpdateOptionImages() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, formData }) => questionsApi.updateOptionImages(id, formData),
+    mutationFn: ({ id, formData }) =>
+      questionsApi.updateOptionImages(id, formData),
     onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: [...QUERY_KEYS.QUESTIONS, id] });
+      queryClient.invalidateQueries({
+        queryKey: [...QUERY_KEYS.QUESTIONS, id],
+      });
     },
   });
 }
@@ -127,10 +184,13 @@ export function useUpdateOptionImages() {
 export function useUploadQuestionImage() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, formData }) => questionsApi.uploadQuestionImage(id, formData),
+    mutationFn: ({ id, formData }) =>
+      questionsApi.uploadQuestionImage(id, formData),
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.QUESTIONS });
-      queryClient.invalidateQueries({ queryKey: [...QUERY_KEYS.QUESTIONS, id] });
+      queryClient.invalidateQueries({
+        queryKey: [...QUERY_KEYS.QUESTIONS, id],
+      });
     },
   });
 }
@@ -138,10 +198,13 @@ export function useUploadQuestionImage() {
 export function useUploadOptionImages() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, formData }) => questionsApi.uploadOptionImages(id, formData),
+    mutationFn: ({ id, formData }) =>
+      questionsApi.uploadOptionImages(id, formData),
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.QUESTIONS });
-      queryClient.invalidateQueries({ queryKey: [...QUERY_KEYS.QUESTIONS, id] });
+      queryClient.invalidateQueries({
+        queryKey: [...QUERY_KEYS.QUESTIONS, id],
+      });
     },
   });
 }
@@ -150,7 +213,21 @@ export function useDeleteQuestion() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: questionsApi.remove,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: QUERY_KEYS.QUESTIONS }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.QUESTIONS });
+      toast.success("Question deleted successfully!", {
+        description: "The question has been removed.",
+      });
+    },
+    onError: (error) => {
+      const message =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to delete question";
+      const details = error?.response?.data?.error || "Please try again.";
+      toast.error(message, { description: details });
+      console.error("Failed to delete question:", error);
+    },
   });
 }
 
@@ -164,7 +241,7 @@ export function usePaperSets() {
 
 export function usePaperSetQuestions(setId) {
   return useQuery({
-    queryKey: [...QUERY_KEYS.PAPER_SETS, setId, 'questions'],
+    queryKey: [...QUERY_KEYS.PAPER_SETS, setId, "questions"],
     queryFn: () => paperSetsApi.getQuestions(setId),
     enabled: !!setId,
   });
@@ -174,8 +251,23 @@ export function useAddQuestionToPaperSet() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ setId, ...data }) => paperSetsApi.addQuestion(setId, data),
-    onSuccess: (_, { setId }) =>
-      queryClient.invalidateQueries({ queryKey: [...QUERY_KEYS.PAPER_SETS, setId] }),
+    onSuccess: (data, { setId }) => {
+      queryClient.invalidateQueries({
+        queryKey: [...QUERY_KEYS.PAPER_SETS, setId],
+      });
+      toast.success("Question added to paper set successfully!", {
+        description: "The question is now part of the set.",
+      });
+    },
+    onError: (error) => {
+      const message =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to add question to paper set";
+      const details = error?.response?.data?.error || "Please try again.";
+      toast.error(message, { description: details });
+      console.error("Failed to add question to paper set:", error);
+    },
   });
 }
 
@@ -183,8 +275,23 @@ export function useRemoveQuestionFromPaperSet() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ setId, qId }) => paperSetsApi.removeQuestion(setId, qId),
-    onSuccess: (_, { setId }) =>
-      queryClient.invalidateQueries({ queryKey: [...QUERY_KEYS.PAPER_SETS, setId] }),
+    onSuccess: (data, { setId }) => {
+      queryClient.invalidateQueries({
+        queryKey: [...QUERY_KEYS.PAPER_SETS, setId],
+      });
+      toast.success("Question removed from paper set successfully!", {
+        description: "The question has been removed.",
+      });
+    },
+    onError: (error) => {
+      const message =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to remove question from paper set";
+      const details = error?.response?.data?.error || "Please try again.";
+      toast.error(message, { description: details });
+      console.error("Failed to remove question from paper set:", error);
+    },
   });
 }
 
@@ -198,7 +305,7 @@ export function useQuestionBank(params) {
 
 export function useQuestionBankStats() {
   return useQuery({
-    queryKey: [...QUERY_KEYS.QUESTION_BANK, 'stats'],
+    queryKey: [...QUERY_KEYS.QUESTION_BANK, "stats"],
     queryFn: bankApi.getStats,
   });
 }
@@ -207,7 +314,21 @@ export function usePublishBankQuestion() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: bankApi.publish,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: QUERY_KEYS.QUESTION_BANK }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.QUESTION_BANK });
+      toast.success("Question published successfully!", {
+        description: "The question is now available in the bank.",
+      });
+    },
+    onError: (error) => {
+      const message =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to publish question";
+      const details = error?.response?.data?.error || "Please try again.";
+      toast.error(message, { description: details });
+      console.error("Failed to publish question:", error);
+    },
   });
 }
 
@@ -215,7 +336,21 @@ export function useUnpublishBankQuestion() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: bankApi.unpublish,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: QUERY_KEYS.QUESTION_BANK }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.QUESTION_BANK });
+      toast.success("Question unpublished successfully!", {
+        description: "The question is now hidden from the bank.",
+      });
+    },
+    onError: (error) => {
+      const message =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to unpublish question";
+      const details = error?.response?.data?.error || "Please try again.";
+      toast.error(message, { description: details });
+      console.error("Failed to unpublish question:", error);
+    },
   });
 }
 
@@ -240,7 +375,23 @@ export function useCreateCycle() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: cyclesApi.create,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: QUERY_KEYS.CYCLES }),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.CYCLES });
+      toast.success("Cycle created successfully!", {
+        description: `${data.title} has been created.`,
+      });
+    },
+    onError: (error) => {
+      const message =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to create cycle";
+      const details =
+        error?.response?.data?.error ||
+        "Please check the cycle details and try again.";
+      toast.error(message, { description: details });
+      console.error("Failed to create cycle:", error);
+    },
   });
 }
 
@@ -248,7 +399,21 @@ export function useChangeCycleStatus() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ id, ...data }) => cyclesApi.changeStatus(id, data),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: QUERY_KEYS.CYCLES }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.CYCLES });
+      toast.success("Cycle status updated successfully!", {
+        description: "The cycle status has been changed.",
+      });
+    },
+    onError: (error) => {
+      const message =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to update cycle status";
+      const details = error?.response?.data?.error || "Please try again.";
+      toast.error(message, { description: details });
+      console.error("Failed to change cycle status:", error);
+    },
   });
 }
 
@@ -256,7 +421,21 @@ export function useDeleteCycle() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id) => cyclesApi.remove(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: QUERY_KEYS.CYCLES }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.CYCLES });
+      toast.success("Cycle deleted successfully!", {
+        description: "The cycle has been removed.",
+      });
+    },
+    onError: (error) => {
+      const message =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to delete cycle";
+      const details = error?.response?.data?.error || "Please try again.";
+      toast.error(message, { description: details });
+      console.error("Failed to delete cycle:", error);
+    },
   });
 }
 
@@ -264,7 +443,21 @@ export function usePublishCycle() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id) => cyclesApi.publish(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: QUERY_KEYS.CYCLES }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.CYCLES });
+      toast.success("Cycle published successfully!", {
+        description: "The cycle is now live.",
+      });
+    },
+    onError: (error) => {
+      const message =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to publish cycle";
+      const details = error?.response?.data?.error || "Please try again.";
+      toast.error(message, { description: details });
+      console.error("Failed to publish cycle:", error);
+    },
   });
 }
 
@@ -272,13 +465,27 @@ export function useUnpublishCycle() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (id) => cyclesApi.unpublish(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: QUERY_KEYS.CYCLES }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.CYCLES });
+      toast.success("Cycle unpublished successfully!", {
+        description: "The cycle is now in draft mode.",
+      });
+    },
+    onError: (error) => {
+      const message =
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to unpublish cycle";
+      const details = error?.response?.data?.error || "Please try again.";
+      toast.error(message, { description: details });
+      console.error("Failed to unpublish cycle:", error);
+    },
   });
 }
 
 export function useCycleParticipants(id, options = {}) {
   return useQuery({
-    queryKey: [...QUERY_KEYS.CYCLES, id, 'participants'],
+    queryKey: [...QUERY_KEYS.CYCLES, id, "participants"],
     queryFn: () => cyclesApi.getParticipants(id),
     enabled: !!id,
     ...options,
@@ -287,7 +494,7 @@ export function useCycleParticipants(id, options = {}) {
 
 export function useCycleResults(id) {
   return useQuery({
-    queryKey: [...QUERY_KEYS.CYCLES, id, 'results'],
+    queryKey: [...QUERY_KEYS.CYCLES, id, "results"],
     queryFn: () => cyclesApi.getResults(id),
     enabled: !!id,
   });
@@ -295,7 +502,7 @@ export function useCycleResults(id) {
 
 export function useCycleLeaderboard(id, options = {}) {
   return useQuery({
-    queryKey: [...QUERY_KEYS.CYCLES, id, 'leaderboard'],
+    queryKey: [...QUERY_KEYS.CYCLES, id, "leaderboard"],
     queryFn: () => cyclesApi.getLeaderboard(id),
     enabled: !!id,
     ...options,
