@@ -128,7 +128,7 @@ export default function EditStudentDialog({ open, onOpenChange, student, college
       email: form.email,
       department_id: form.department_id,
       program_id: form.program_id,
-      batch_year: batchYear || undefined,
+      batch_year: batchYear ? String(batchYear) : undefined,
       current_semester: form.current_semester ? Number(form.current_semester) : undefined,
       date_of_birth: form.date_of_birth
         ? (form.date_of_birth instanceof Date

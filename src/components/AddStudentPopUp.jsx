@@ -155,7 +155,7 @@ export default function AddStudentPopUp({ open, onOpenChange, onAddStudent, coll
       department_id: form.department_id,
       program_id: form.program_id,      // ← add this
       enrollment_number: enrollmentNumber,
-      batch_year: batchYear,
+      batch_year: batchYear ? String(batchYear) : undefined,
       current_semester: Number(form.current_semester),
       date_of_birth: form.date_of_birth ? form.date_of_birth.toISOString().split("T")[0] : undefined,
       gender: form.gender,

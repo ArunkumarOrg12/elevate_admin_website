@@ -369,7 +369,7 @@ export default function Students() {
                     </div>
                     <div>
                       <div className="text-sm font-medium text-gray-900">{s.name}</div>
-                      <div className="text-xs text-gray-400">{s.roll} · {s.email} ·  {s.dept} · {s.year}</div>
+                      <div className="text-xs text-gray-400">{s.roll} · {s.email} · {s.dept} · {s.year}</div>
                     </div>
                   </div>
                 </TableCell>
