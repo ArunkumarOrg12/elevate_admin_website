@@ -52,7 +52,6 @@ const deleteAdminMutation = useDeleteAdmin();
 const rawUsers = responseData?.admins || [];
 
 const admins = rawUsers
-  .filter((u) => u.id !== user?.id)  // ← exclude currently logged-in admin
   .map((u) => ({
     id: u.id,
     name: `${u.first_name} ${u.last_name}`,
@@ -123,9 +122,9 @@ const handleDelete = () => {
   const paged = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
 
  const counts = {
-  total: admins.length,
-  superadmin: admins.filter(a => a.role === "superadmin").length,
-  collegeAdmin: admins.filter(a => a.role === "college_admin").length,
+  total: responseData?.pagination?.total ?? rawUsers.length,
+  superadmin: rawUsers.filter(u => u.role === "superadmin").length,
+  collegeAdmin: rawUsers.filter(u => u.role === "college_admin").length,
 };
 
  const COLS = [

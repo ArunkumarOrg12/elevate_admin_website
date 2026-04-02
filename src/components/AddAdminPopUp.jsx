@@ -36,7 +36,7 @@ export default function AddAdminDialog({ open, onOpenChange, onAddAdmin }) {
     else if (!/\S+@\S+\.\S+/.test(form.email)) e.email = "Enter a valid email";
     if (!form.password.trim()) e.password = "Required";
     if (!form.role) e.role = "Select a role";
-    if (!form.college_id) e.college_id = "Select a college";
+    if (form.role !== "superadmin" && !form.college_id) e.college_id = "Select a college";
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -117,7 +117,7 @@ export default function AddAdminDialog({ open, onOpenChange, onAddAdmin }) {
           {/* Role */}
           <div>
             <Label className="mb-2">Role</Label>
-            <Select value={form.role} onValueChange={(v) => setForm((p) => ({ ...p, role: v }))}>
+            <Select value={form.role} onValueChange={(v) => setForm((p) => ({ ...p, role: v, college_id: v === "superadmin" ? "" : p.college_id }))}>
               <SelectTrigger className={errors.role ? "border-red-400" : ""}>
                 <SelectValue placeholder="Select role" />
               </SelectTrigger>
@@ -129,30 +129,32 @@ export default function AddAdminDialog({ open, onOpenChange, onAddAdmin }) {
           </div>
 
           {/* College */}
-          <div>
-            <Label className="mb-2">College</Label>
-            <Select
-              value={form.college_id}
-              onValueChange={(v) => setForm((p) => ({ ...p, college_id: v }))}
-              disabled={collegesLoading}
-            >
-              <SelectTrigger className={errors.college_id ? "border-red-400" : ""}>
-                <SelectValue placeholder={
-                  collegesLoading ? "Loading…" :
-                  colleges.length === 0 ? "No colleges found" :
-                  "Select college"
-                } />
-              </SelectTrigger>
-              <SelectContent>
-                {colleges.map((c) => (
-                  <SelectItem key={c.id} value={String(c.id)}>
-                    {c.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {err("college_id")}
-          </div>
+          {form.role !== "superadmin" && (
+            <div>
+              <Label className="mb-2">College</Label>
+              <Select
+                value={form.college_id}
+                onValueChange={(v) => setForm((p) => ({ ...p, college_id: v }))}
+                disabled={collegesLoading}
+              >
+                <SelectTrigger className={errors.college_id ? "border-red-400" : ""}>
+                  <SelectValue placeholder={
+                    collegesLoading ? "Loading…" :
+                    colleges.length === 0 ? "No colleges found" :
+                    "Select college"
+                  } />
+                </SelectTrigger>
+                <SelectContent>
+                  {colleges.map((c) => (
+                    <SelectItem key={c.id} value={String(c.id)}>
+                      {c.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {err("college_id")}
+            </div>
+          )}
 
         </div>
 
