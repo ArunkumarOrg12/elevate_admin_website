@@ -7,6 +7,18 @@ const settingsApi = {
   get: () =>
     api.get(ADMIN_PATHS.SETTINGS),
 
+  getGeneral: () =>
+    api.get(`${ADMIN_PATHS.SETTINGS}/general`),
+
+  updateGeneral: (data) =>
+    api.put(`${ADMIN_PATHS.SETTINGS}/general`, data),
+
+  getProfile: () =>
+    api.get(`${ADMIN_PATHS.SETTINGS}/profile`),
+
+  updateProfile: (data) =>
+    api.put(`${ADMIN_PATHS.SETTINGS}/profile`, data),
+
   update: (data) =>
     api.put(ADMIN_PATHS.SETTINGS, data),
 
@@ -22,6 +34,36 @@ export function useSettings() {
   return useQuery({
     queryKey: QUERY_KEYS.SETTINGS,
     queryFn: settingsApi.get,
+  });
+}
+
+export function useGeneralSettings() {
+  return useQuery({
+    queryKey: [...QUERY_KEYS.SETTINGS, 'general'],
+    queryFn: settingsApi.getGeneral,
+  });
+}
+
+export function useUpdateGeneralSettings() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: settingsApi.updateGeneral,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: [...QUERY_KEYS.SETTINGS, 'general'] }),
+  });
+}
+
+export function useProfileSettings() {
+  return useQuery({
+    queryKey: [...QUERY_KEYS.SETTINGS, 'profile'],
+    queryFn: settingsApi.getProfile,
+  });
+}
+
+export function useUpdateProfileSettings() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: settingsApi.updateProfile,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: [...QUERY_KEYS.SETTINGS, 'profile'] }),
   });
 }
 
