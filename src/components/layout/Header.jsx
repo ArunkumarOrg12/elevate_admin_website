@@ -90,9 +90,10 @@ export default function Header() {
             </SelectContent>
           </Select>
         ) : (
-          <div className="text-sm font-medium border border-gray-200 rounded-[9px] px-3 py-1.5 text-gray-600 bg-gray-50 max-w-[130px] sm:max-w-[200px] md:max-w-none truncate">
-            {selectedCollege?.name ?? user?.college?.name}
-          </div>
+          // <div className="text-sm font-medium border border-gray-200 rounded-[9px] px-3 py-1.5 text-gray-600 bg-gray-50 max-w-[130px] sm:max-w-[200px] md:max-w-none truncate">
+          //   {selectedCollege?.name ?? user?.college?.name}
+          // </div>
+          <></>
         )}
 
         {/* AY — hidden on mobile */}

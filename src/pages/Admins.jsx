@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/table";
 
 import { useAuth } from "../hooks/useAuth";
-import { useDeleteAdmin, useGetAllAdmins } from "../controllers/adminController";
+import { useDeleteAdmin, useGetAllAdmins, useGetColleges } from "../controllers/adminController";
 import AddAdminDialog from "../components/AddAdminPopUp";
 import {
   Dialog, DialogContent, DialogHeader,
@@ -44,6 +44,7 @@ export default function Admins() {
 
   const { user } = useAuth();
  const { data: responseData, isLoading, isError,error } = useGetAllAdmins();
+const { data: colleges = [] } = useGetColleges();
 const deleteAdminMutation = useDeleteAdmin();
 
 
@@ -57,7 +58,7 @@ const admins = rawUsers
     name: `${u.first_name} ${u.last_name}`,
     email: u.email,
     role: u.role,
-    college: u.college?.name || "N/A",
+    college: u.college?.name || colleges.find(c => c.id === u.college_id)?.name || "N/A",
     lastLogin: u.last_login ? new Date(u.last_login) : null,
     createdAt: new Date(u.createdAt),
   }));
