@@ -14,7 +14,7 @@ const collegesApi = {
     api.post(ADMIN_PATHS.COLLEGES, data),
 
   update: (id, data) =>
-    api.put(`${ADMIN_PATHS.COLLEGES}/${id}`, data),
+     api.patch(`${ADMIN_PATHS.COLLEGES}/${id}`, data),
 
   remove: (id) =>
     api.delete(`${ADMIN_PATHS.COLLEGES}/${id}`),
@@ -27,10 +27,18 @@ const collegesApi = {
 };
 
 // ── Hooks ─────────────────────────────────────────────────────────────────────
-export function useColleges(params) {
+export function useColleges(params, options = {}) {
   return useQuery({
     queryKey: [...QUERY_KEYS.COLLEGES, params],
     queryFn: () => collegesApi.getAll(params),
+    select: (res) => {
+      if (Array.isArray(res)) return res;
+      if (Array.isArray(res?.colleges)) return res.colleges;
+      if (Array.isArray(res?.data?.colleges)) return res.data.colleges;
+      if (Array.isArray(res?.data)) return res.data;
+      return [];
+    },
+    ...options,
   });
 }
 

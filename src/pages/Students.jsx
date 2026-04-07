@@ -1,4 +1,8 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
+import {
+  Dialog, DialogContent, DialogHeader,
+  DialogTitle, DialogDescription, DialogFooter,
+} from "@/components/ui/dialog";
 import {
   Download, SlidersHorizontal, Search,
   ChevronUp, ChevronDown, Plus, Eye, Pencil, Trash2,
@@ -18,10 +22,15 @@ import {
 
 import { getEIColor, getEIBgColor, getEICategory, formatDate } from "../utils/helpers";
 
-import { useGetAllStudents, useDeleteStudent } from "../controllers/studentsController";
+import { useGetAllStudents, useDeleteStudent, useBulkUploadStudents } from "../controllers/studentsController";
 import AddStudentDialog from "../components/AddStudentPopUp";
 import StudentDetailDialog from "../components/studentDetailDialog";
 import { useAuth } from "../hooks/useAuth";
+import { useFilters } from "../context/FilterContext";
+import EditStudentDialog from "../components/UpdateStudentPopUp";
+import downloadCSV from "../utils/downloadCSV";
+import { handleFileUpload } from "../utils/handleFileUpload";
+import { handleDownloadTemplate } from "../utils/studentTemplateDownload";
 
 
 const DEPTS = ["All", "CSE", "ECE", "MECH", "CIVIL", "IT", "EEE", "MBA", "MCA"];
@@ -52,8 +61,18 @@ export default function Students() {
   const [selectedStudent, setSelectedStudent]   = useState(null); // for detail popup
   const PER_PAGE = 8;
 
-  const { user } = useAuth();
-  const { data: responseData, isLoading, isError } = useGetAllStudents();
+  const [editStudent, setEditStudent] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+
+  const { user, isSuperAdmin } = useAuth();
+  const { selectedCollege } = useFilters();
+
+  // superadmin: fetch by selected college (college_id param); college_admin: scoped by JWT
+  const effectiveCollegeId = isSuperAdmin ? selectedCollege?.id : user?.college_id;
+  const { data: responseData, isLoading, isError } = useGetAllStudents({
+    isSuperAdmin,
+    collegeId: selectedCollege?.id ?? null,
+  });
   const deleteStudentMutation = useDeleteStudent();
 
   const rawStudents = Array.isArray(responseData)
@@ -61,38 +80,31 @@ export default function Students() {
     : (responseData?.data ?? []);
 
 
-  const students = rawStudents.map((u) => {
-    const ei = u.student?.ei_score ?? u.student?.eiScore ?? 0;
-    const riskCategory = u.student?.risk_category ?? getEICategory(ei);
-    return {
-      id:             u.id,
-      name:           `${u.first_name} ${u.last_name}`,
-      roll:           u.student?.enrollment_number  || "N/A",
-      dept:           u.student?.department?.name   || "N/A",
-      year:           u.student?.batch_year         || "N/A",
-      riskCategory,
-      eiScore:        ei,
-      percentile:     u.student?.index_percentile   ?? u.student?.percentile    ?? 0,
-      cgpa:           u.student?.cgpa               ?? 0,
-      consistency:    u.student?.consistency        ?? 0,
-      velocity:       u.student?.growth_velocity    ?? u.student?.velocity      ?? null,
-      // Section scores
-      aptitude_score:      u.student?.aptitude_score      ?? null,
-      technical_score:     u.student?.technical_score     ?? null,
-      behavioral_score:    u.student?.behavioral_score    ?? null,
-      communication_score: u.student?.communication_score ?? null,
-      topic_analysis:      u.student?.topic_analysis      ?? null,
-      // Extra fields shown in detail popup
-      gender:           u.student?.gender,
-      category:         u.student?.category,
-      date_of_birth:    u.student?.date_of_birth,
-      admission_score:  u.student?.admission_score,
-      current_semester: u.student?.current_semester,
-      lastAssessment: u.student?.lastAssessment
-        ? new Date(u.student.lastAssessment)
-        : new Date(),
-    };
-  });
+  const students = rawStudents.map((u) => ({
+    id:             u.id,
+    name:           `${u.first_name} ${u.last_name}`,
+     email:          u.email, 
+    roll:           u.student?.enrollment_number  || "N/A",
+    dept:           u.student?.department?.name   || "N/A",
+    department_id:  u.student?.department_id      || "",
+    program_id:     u.student?.program_id         || "",
+    year:           u.student?.batch_year         || "N/A",
+    status:         u.student?.status             ?? "Ready",
+    eiScore:        u.student?.eiScore            ?? 0,
+    percentile:     u.student?.percentile         ?? 0,
+    cgpa:           u.student?.cgpa               ?? 0,
+    consistency:    u.student?.consistency        ?? 0,
+    velocity:       u.student?.velocity           ?? 0,
+    // Extra fields shown in detail popup
+    gender:           u.student?.gender,
+    category:         u.student?.category,
+    date_of_birth:    u.student?.date_of_birth,
+    admission_score:  u.student?.admission_score,
+    current_semester: u.student?.current_semester,
+    lastAssessment: u.student?.lastAssessment
+      ? new Date(u.student.lastAssessment)
+      : new Date(),
+  }));
 
 
   const handleSort = (field) => {
@@ -104,14 +116,13 @@ export default function Students() {
   // ✅ Opens detail popup instead of navigating
   const handleView = (student) => setSelectedStudent(student);
 
-  const handleEdit = (student) => {
-    console.log("Edit student:", student.id); // TODO: open edit dialog
-  };
+ const handleEdit = (student) => setEditStudent(student);
 
-  const handleDelete = (student) => {
-    if (!window.confirm(`Delete ${student.name}? This cannot be undone.`)) return;
-    deleteStudentMutation.mutate(student.id);
-  };
+  const handleDelete = () => {
+  deleteStudentMutation.mutate(deleteTarget.id, {
+    onSuccess: () => setDeleteTarget(null),
+  });
+};
 
   let filtered = students.filter((s) => {
     const q = search.toLowerCase();
@@ -156,6 +167,24 @@ export default function Students() {
     { key: "actions",        label: "ACTIONS"         },
   ];
 
+  const bulkUploadStudents=useBulkUploadStudents();
+
+  const fileInputRef=useRef(null);
+
+
+  const handleImportedData = (data) => {
+  console.log("Imported students:", data);
+  const mapped = data.map((student) => ({
+    ...student,
+    college_id: effectiveCollegeId, // assign selected college (superadmin) or user's college
+    department_id: student.department_id || DEFAULT_DEPARTMENT_ID, // optional fallback
+  }));
+
+  bulkUploadStudents.mutate(mapped);
+  
+
+};
+
   if (isLoading) return <div className="p-8 text-gray-500">Loading students…</div>;
   if (isError)   return <div className="p-8 text-red-500">Error loading students. Please refresh.</div>;
 
@@ -166,8 +195,17 @@ export default function Students() {
       <AddStudentDialog
         open={showAddDialog}
         onOpenChange={setShowAddDialog}
-        collegeId={user?.college_id}
+        collegeId={effectiveCollegeId}
       />
+
+      <EditStudentDialog
+        open={!!editStudent}
+        onOpenChange={(open) => { if (!open) setEditStudent(null); }}
+        student={editStudent}
+        collegeId={effectiveCollegeId}
+      />
+
+
 
       {/* ✅ Student detail popup */}
       <StudentDetailDialog
@@ -175,6 +213,45 @@ export default function Students() {
         onOpenChange={(open) => { if (!open) setSelectedStudent(null); }}
         student={selectedStudent}
       />
+
+      {/* Delete Confirmation Dialog */}
+<Dialog open={!!deleteTarget} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}>
+  <DialogContent className="max-w-sm">
+    <DialogHeader>
+      <div className="flex items-center gap-3 mb-1">
+        <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+          <Trash2 size={18} className="text-red-600" />
+        </div>
+        <div>
+          <DialogTitle className="text-sm font-semibold text-gray-900">
+            Delete Student
+          </DialogTitle>
+          <DialogDescription className="text-xs text-gray-500">
+            This action cannot be undone
+          </DialogDescription>
+        </div>
+      </div>
+    </DialogHeader>
+
+    <p className="text-sm text-gray-700">
+      Are you sure you want to delete{" "}
+      <span className="font-semibold">{deleteTarget?.name}</span>?
+    </p>
+
+    <DialogFooter className="flex gap-2 pt-2">
+      <Button variant="secondary" onClick={() => setDeleteTarget(null)}>
+        Cancel
+      </Button>
+      <Button
+        variant="destructive"
+        onClick={handleDelete}
+        disabled={deleteStudentMutation.isPending}
+      >
+        {deleteStudentMutation.isPending ? "Deleting…" : "Yes, Delete"}
+      </Button>
+    </DialogFooter>
+  </DialogContent>
+</Dialog>
 
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
@@ -194,9 +271,22 @@ export default function Students() {
           <Button variant="secondary" size="sm">
             <SlidersHorizontal size={14} /> Advanced Filters
           </Button>
-          <Button size="sm">
+          <Button size="sm" onClick={() => fileInputRef?.current?.click()}>
+            <input
+  type="file"
+  accept=".csv, .xlsx, .xls"
+  ref={fileInputRef}
+  onChange={(e) => handleFileUpload(e, handleImportedData)}
+  style={{ display: "none" }}
+/>
+            <Download size={14} /> Import
+          </Button>
+          <Button size="sm" onClick={()=>downloadCSV(students)} >
             <Download size={14} /> Export
           </Button>
+         <Button variant="secondary" size="sm" onClick={() => handleDownloadTemplate(user?.college_id)}>
+  <Download size={14} /> Template
+</Button>
         </div>
       </div>
 
@@ -287,7 +377,7 @@ export default function Students() {
                     </div>
                     <div>
                       <div className="text-sm font-medium text-gray-900">{s.name}</div>
-                      <div className="text-xs text-gray-400">{s.roll} · {s.dept} · {s.year}</div>
+                      <div className="text-xs text-gray-400">{s.roll} · {s.email} · {s.dept} · {s.year}</div>
                     </div>
                   </div>
                 </TableCell>
@@ -344,14 +434,14 @@ export default function Students() {
                     >
                       <Pencil size={15} />
                     </button>
-                    <button
-                      onClick={() => handleDelete(s)}
-                      title="Delete student"
-                      disabled={deleteStudentMutation.isPending}
-                      className="p-1.5 rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-40"
-                    >
-                      <Trash2 size={15} />
-                    </button>
+                  <button
+  onClick={() => setDeleteTarget(s)}
+  title="Delete student"
+  disabled={deleteStudentMutation.isPending}
+  className="p-1.5 rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-40"
+>
+  <Trash2 size={15} />
+</button>
                   </div>
                 </TableCell>
               </TableRow>

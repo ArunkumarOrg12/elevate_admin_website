@@ -50,10 +50,11 @@ export default function SignIn() {
 
         <div className="relative z-10 flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center">
-            <GraduationCap size={22} className="text-white" />
+            {/* <GraduationCap size={22} className="text-white" /> */}
+            <img src="./Logo whitevector.png" alt="Logo" />
           </div>
           <div>
-            <div className="text-white font-bold text-lg leading-tight">EI Portal</div>
+            <div className="text-white font-bold text-lg leading-tight">ELEVATE Admin Portal</div>
             <div className="text-indigo-400 text-sm">Employability Intelligence</div>
           </div>
         </div>

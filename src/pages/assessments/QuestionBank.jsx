@@ -19,6 +19,8 @@ const DIFFICULTY_COLORS = {
 
 export default function QuestionBank() {
   const [filter, setFilter] = useState('all');
+  const [page, setPage] = useState(1);
+  const PER_PAGE = 10;
 
   // Always fetch all, filter client-side
   const { data, isLoading, isError } = useQuestionBank();
@@ -41,6 +43,10 @@ export default function QuestionBank() {
     unpublished: allQuestions.filter(q => q.is_published !== true).length,
     hard: allQuestions.filter(q => q.difficulty === 'hard').length,
   };
+
+  const total = questions.length;
+  const pages = Math.ceil(total / PER_PAGE);
+  const paged = questions.slice((page - 1) * PER_PAGE, page * PER_PAGE);
 
   const isPending = publishMutation.isPending || unpublishMutation.isPending;
 
@@ -74,7 +80,7 @@ export default function QuestionBank() {
                 {isLoading ? 'Loading...' : `${questions.length} question${questions.length !== 1 ? 's' : ''}`}
               </CardDescription>
             </div>
-            <Select value={filter} onValueChange={setFilter}>
+            <Select value={filter} onValueChange={(v) => { setFilter(v); setPage(1); }}>
               <SelectTrigger className="w-36 h-8 text-xs">
                 <SelectValue />
               </SelectTrigger>
@@ -106,12 +112,13 @@ export default function QuestionBank() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {questions.map((q, idx) => {
+              {paged.map((q, idx) => {
+                const idx_ = (page - 1) * PER_PAGE + idx;
                 const qId = q.id || q._id;
                 const isPublished = q.is_published === true;
                 return (
                   <TableRow key={qId}>
-                    <TableCell className="text-gray-400 text-xs w-10">{idx + 1}</TableCell>
+                    <TableCell className="text-gray-400 text-xs w-10">{idx_ + 1}</TableCell>
                     <TableCell className="max-w-[260px]">
                       <span className="text-sm text-gray-800 line-clamp-2">{q.question_text}</span>
                     </TableCell>
@@ -173,6 +180,26 @@ export default function QuestionBank() {
               })}
             </TableBody>
           </Table>
+        )}
+        {pages > 1 && (
+          <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100 bg-gray-50">
+            <p className="text-xs text-gray-500">
+              Showing {total === 0 ? 0 : Math.min((page - 1) * PER_PAGE + 1, total)}–{Math.min(page * PER_PAGE, total)} of {total} questions
+            </p>
+            <div className="flex gap-1">
+              {Array.from({ length: pages }, (_, i) => i + 1).map((p) => (
+                <Button
+                  key={p}
+                  variant={page === p ? 'default' : 'ghost'}
+                  size="icon"
+                  className={`w-7 h-7 text-xs ${page !== p ? 'text-gray-600 hover:bg-gray-200' : ''}`}
+                  onClick={() => setPage(p)}
+                >
+                  {p}
+                </Button>
+              ))}
+            </div>
+          </div>
         )}
       </Card>
     </div>

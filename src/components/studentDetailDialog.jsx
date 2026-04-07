@@ -1,10 +1,7 @@
 
 import { useState } from "react";
 
-import {
-  Dialog, DialogContent, DialogHeader,
-  DialogTitle, DialogDescription,
-} from "../components/ui/dialog";
+import { Dialog, DialogContent } from "../components/ui/dialog";
 
 
 import {
@@ -229,6 +226,6 @@ export default function StudentDetailDialog({ open, onOpenChange, student }) {
       </DialogContent>
     </Dialog>
   );
- 
+
 }
 

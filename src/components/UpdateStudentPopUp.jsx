@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { Calendar as CalendarIcon } from "lucide-react";
 import {
@@ -14,51 +14,81 @@ import {
 } from "../components/ui/select";
 import { Popover, PopoverTrigger, PopoverContent } from "../components/ui/popover";
 import { Calendar } from "../components/ui/calendar";
-import { useCreateStudent, useGetDepartments } from "../controllers/studentsController";
+import { useUpdateStudent, useGetDepartments, useGetStudentById } from "../controllers/studentsController";
 import { useGetPrograms } from "../controllers/programController";
 import { useColleges } from "../controllers/collegesController";
 
 const GENDERS = ["Male", "Female", "Other"];
-
-
-
-// Generate year options for batch start (last 10 years)
 const currentYear = new Date().getFullYear();
-// Only allow batch years up to current year (no future batches)
 const START_YEARS = Array.from({ length: 10 }, (_, i) => currentYear - i);
-const DURATIONS = [3, 4, 5]; // years
+const DURATIONS = [3, 4, 5];
 
-const EMPTY_FORM = {
-  first_name: "", last_name: "", email: "",
-  college_id: "",
-  department_id: "",
-  program_id: "",
-  batch_start: "", batch_duration: "4",
-  current_semester: "",
-  date_of_birth: null, gender: "",
-};
-
-// Auto-generate enrollment number
-function generateEnrollmentNumber(deptCode = "GEN", batchStart = "") {
-  const year = batchStart ? String(batchStart).slice(2) : String(currentYear).slice(2);
-  const random = Math.floor(1000 + Math.random() * 9000);
-  return `${year}${deptCode.toUpperCase().slice(0, 3)}${random}`;
-}
-
-export default function AddStudentPopUp({ open, onOpenChange, onAddStudent, collegeId }) {
-  const [form, setForm] = useState(() => ({ ...EMPTY_FORM, college_id: collegeId || "" }));
+export default function EditStudentDialog({ open, onOpenChange, student, collegeId }) {
+  const [form, setForm] = useState({});
   const [errors, setErrors] = useState({});
-  const [createdStudent, setCreatedStudent] = useState(null);
   const [dobOpen, setDobOpen] = useState(false);
 
-  const createStudentMutation = useCreateStudent();
+  const updateStudentMutation = useUpdateStudent();
   const { data: colleges = [], isLoading: collegesLoading } = useColleges();
+  const { data: rawStudentResponse } = useGetStudentById(student?.id);
+  const rawStudent = rawStudentResponse?.student || rawStudentResponse || {};
+
+  // Use the college from form (if changed) or the prop fallback
   const activeCollegeId = form.college_id || collegeId;
+
   const { data: departments = [], isLoading: deptsLoading } = useGetDepartments(activeCollegeId);
   const { data: programs = [], isLoading: programsLoading } = useGetPrograms(
     activeCollegeId,
     form.department_id || undefined
   );
+
+  // Parse batch_year safely (handles "2022-2026", "2024", or fallback)
+  const parseBatchYear = (batchYear) => {
+    const str = String(batchYear || "").trim();
+    if (!str || str === "N/A" || str === "undefined") return { batch_start: "", batch_duration: "4" };
+    
+    if (str.includes("-")) {
+      const [start, end] = str.split("-").map(s => s.trim());
+      const duration = Number(end) - Number(start);
+      return {
+        batch_start: start,
+        batch_duration: duration > 0 ? String(duration) : "4",
+      };
+    }
+    
+    // Fallback if it's just a starting year like "2024"
+    if (/^\d{4}$/.test(str)) {
+      return { batch_start: str, batch_duration: "4" };
+    }
+    
+    return { batch_start: "", batch_duration: "4" };
+  };
+
+  // Populate form when student changes or raw data loads
+  useEffect(() => {
+    if (!student) return;
+    
+    // Prefer data fetched by ID over the partially mapped list item
+    const batchData = rawStudent?.batch_year || student.batch_year || student.year || "";
+    const { batch_start, batch_duration } = parseBatchYear(batchData);
+    
+    const dOB = rawStudent?.date_of_birth || student.date_of_birth;
+
+    setForm({
+      college_id: String(rawStudent?.college_id || student.college_id || collegeId || ""),
+      first_name: rawStudent?.first_name || student.name?.split(" ")[0] || "",
+      last_name: rawStudent?.last_name || student.name?.split(" ").slice(1).join(" ") || "",
+      email: rawStudent?.email || student.email || "",
+      department_id: String(rawStudent?.department_id || student.department_id || ""),
+      program_id: String(rawStudent?.program_id || student.program_id || ""),
+      batch_start,
+      batch_duration,
+      current_semester: String(rawStudent?.current_semester || student.current_semester || ""),
+      date_of_birth: dOB ? new Date(dOB) : null,
+      gender: rawStudent?.gender || student.gender || "",
+    });
+    setErrors({});
+  }, [student, rawStudentResponse]);
 
   const batchYear = form.batch_start && form.batch_duration
     ? `${form.batch_start}-${Number(form.batch_start) + Number(form.batch_duration)}`
@@ -66,29 +96,16 @@ export default function AddStudentPopUp({ open, onOpenChange, onAddStudent, coll
 
   const validate = () => {
     const e = {};
+    if (!form.college_id) e.college_id = "Select a college";
+    if (!form.first_name?.trim()) e.first_name = "Required";
+    if (!form.last_name?.trim()) e.last_name = "Required";
+    if (!form.email?.trim()) e.email = "Required";
+    else if (!/\S+@\S+\.\S+/.test(form.email)) e.email = "Enter a valid email";
+    if (!form.department_id) e.department_id = "Select a department";
+    if (!form.program_id) e.program_id = "Select a program";
+    if (!form.gender) e.gender = "Select gender";
 
-    // ... your existing validations ...
-
-    // ✅ Batch start can't be in the future
-    if (form.batch_start && Number(form.batch_start) > currentYear) {
-      e.batch_start = "Batch cannot start in the future";
-    }
-
-    // ✅ Batch must not have fully ended
-    if (form.batch_start && form.batch_duration) {
-      const endYear = Number(form.batch_start) + Number(form.batch_duration);
-      if (endYear < currentYear) {
-        e.batch_start = `This batch ended in ${endYear}. Cannot add students to a completed batch.`;
-      }
-    }
-
-    // ✅ Semester must be in the valid range for selected batch
-    const validSems = getAvailableSemesters();
-    if (form.current_semester && !validSems.includes(Number(form.current_semester))) {
-      e.current_semester = "Semester is not valid for the selected batch and current date";
-    }
-
-    // ✅ Age validation — must be between 15 and 35
+    // Age validation
     if (form.date_of_birth) {
       const dob = form.date_of_birth instanceof Date ? form.date_of_birth : new Date(form.date_of_birth);
       const age = (new Date() - dob) / (1000 * 60 * 60 * 24 * 365.25);
@@ -96,143 +113,58 @@ export default function AddStudentPopUp({ open, onOpenChange, onAddStudent, coll
       if (age > 35) e.date_of_birth = "Age seems too high — please verify";
     }
 
-    // ✅ Email must match college domain (optional but professional)
-    // Uncomment and set your domain if you want this:
-    // if (form.email && !form.email.endsWith("@vit.ac.in")) {
-    //   e.email = "Must use official college email (@vit.ac.in)";
-    // }
-
     setErrors(e);
     return Object.keys(e).length === 0;
   };
 
-  const getAvailableSemesters = () => {
-    if (!form.batch_start || !form.batch_duration) return [];
-
-    const startYear = Number(form.batch_start);
-    const duration = Number(form.batch_duration);
-    const totalSems = duration * 2;
-    const now = new Date();
-    const currentYear = now.getFullYear();
-    const currentMonth = now.getMonth() + 1; // 1–12
-
-    if (startYear > currentYear) return []; // future batch — no semesters yet
-
-    // How many 6-month blocks have elapsed since batch start (July of start year)?
-    // Sem 1: Jul–Dec of startYear
-    // Sem 2: Jan–Jun of startYear+1
-    // Sem 3: Jul–Dec of startYear+1 ...
-    const monthsElapsed =
-      (currentYear - startYear) * 12 + (currentMonth - 7); // July = month 7 = sem1 start
-
-    // Each semester = 6 months. +1 because we're *in* the current semester
-    const currentSem = Math.floor(monthsElapsed / 6) + 1;
-
-    // Clamp between 1 and totalSems
-    const maxSem = Math.min(Math.max(currentSem, 1), totalSems);
-
-    return Array.from({ length: maxSem }, (_, i) => i + 1);
-  };
-
-
-
-
   const handleSubmit = () => {
     if (!validate()) return;
-    if (!form.college_id && !collegeId) {
-      alert("Please select a college.");
-      return;
-    }
 
-    const selectedDept = departments.find(d => String(d.id) === String(form.department_id));
-    const enrollmentNumber = generateEnrollmentNumber(selectedDept?.code, form.batch_start);
-
-    createStudentMutation.mutate({
+    updateStudentMutation.mutate({
+      id: student.id,
+      college_id: form.college_id,
       first_name: form.first_name,
       last_name: form.last_name,
       email: form.email,
-      college_id: form.college_id || collegeId,
       department_id: form.department_id,
-      program_id: form.program_id,      // ← add this
-      enrollment_number: enrollmentNumber,
+      program_id: form.program_id,
       batch_year: batchYear ? String(batchYear) : undefined,
-      current_semester: Number(form.current_semester),
-      date_of_birth: form.date_of_birth ? form.date_of_birth.toISOString().split("T")[0] : undefined,
+      current_semester: form.current_semester ? Number(form.current_semester) : undefined,
+      date_of_birth: form.date_of_birth
+        ? (form.date_of_birth instanceof Date
+          ? form.date_of_birth.toISOString().split("T")[0]
+          : form.date_of_birth)
+        : undefined,
       gender: form.gender,
     }, {
-      onSuccess: (data) => {
-        setCreatedStudent({ ...data, enrollment_number: enrollmentNumber });
-        onAddStudent?.(data);
-      },
+      onSuccess: () => onOpenChange(false),
     });
   };
 
   const handleClose = () => {
-    setForm({ ...EMPTY_FORM, college_id: collegeId || "" });
     setErrors({});
-    setCreatedStudent(null);
     onOpenChange(false);
   };
 
   const field = (key) => ({
-    value: form[key],
-    onChange: (e) => setForm((prev) => ({ ...prev, [key]: e.target.value })),
-    className: errors[key] ? "border-red-400 focus:ring-red-400" : "",
+    value: form[key] || "",
+    onChange: (e) => setForm((p) => ({ ...p, [key]: e.target.value })),
+    className: errors[key] ? "border-red-400" : "",
   });
 
   const err = (key) => errors[key] && (
     <p className="text-xs text-red-500 mt-0.5">{errors[key]}</p>
   );
 
-  useEffect(() => {
-    const validSems = getAvailableSemesters();
-    if (!validSems.includes(Number(form.current_semester))) {
-      setForm((p) => ({ ...p, current_semester: "" }));
-    }
-  }, [form.batch_start, form.batch_duration]);
+  if (!student) return null;
 
-  // ── Success screen ──────────────────────────────────────────────
-  if (createdStudent) {
-    return (
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-sm p-8 text-center space-y-4">
-          <div className="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center mx-auto">
-            <span className="text-2xl">✓</span>
-          </div>
-          <DialogTitle>Student Created!</DialogTitle>
-          <DialogDescription>
-            Share these login credentials with the student.
-          </DialogDescription>
-          <div className="bg-gray-50 rounded-lg p-4 text-left space-y-2">
-            <div>
-              <p className="text-xs text-gray-500">Name</p>
-              <p className="text-sm font-medium">{createdStudent.first_name} {createdStudent.last_name}</p>
-            </div>
-            <div>
-              <p className="text-xs text-gray-500">Email</p>
-              <p className="text-sm font-medium">{createdStudent.email}</p>
-            </div>
-            <div>
-              <p className="text-xs text-gray-500">Enrollment Number (= default password)</p>
-              <p className="text-sm font-bold text-indigo-600 tracking-wider">
-                {createdStudent.enrollment_number}
-              </p>
-            </div>
-          </div>
-          <Button className="w-full" onClick={handleClose}>Done</Button>
-        </DialogContent>
-      </Dialog>
-    );
-  }
-
-  // ── Form ────────────────────────────────────────────────────────
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl p-10 w-full max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Add Student</DialogTitle>
+          <DialogTitle>Edit Student</DialogTitle>
           <DialogDescription>
-            Enrollment number is auto-generated and used as the default login password.
+            Update details for {student.name}.
           </DialogDescription>
         </DialogHeader>
 
@@ -246,12 +178,12 @@ export default function AddStudentPopUp({ open, onOpenChange, onAddStudent, coll
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label className="mb-2">First Name</Label>
-              <Input placeholder="e.g. Arjun" {...field("first_name")} />
+              <Input placeholder="First name" {...field("first_name")} />
               {err("first_name")}
             </div>
             <div>
               <Label className="mb-2">Last Name</Label>
-              <Input placeholder="e.g. Sharma" {...field("last_name")} />
+              <Input placeholder="Last name" {...field("last_name")} />
               {err("last_name")}
             </div>
           </div>
@@ -296,7 +228,7 @@ export default function AddStudentPopUp({ open, onOpenChange, onAddStudent, coll
             </div>
             <div>
               <Label className="mb-2">Gender</Label>
-              <Select value={form.gender} onValueChange={(v) => setForm((p) => ({ ...p, gender: v }))}>
+              <Select value={form.gender || ""} onValueChange={(v) => setForm((p) => ({ ...p, gender: v }))}>
                 <SelectTrigger className={errors.gender ? "border-red-400" : ""}>
                   <SelectValue placeholder="Select gender" />
                 </SelectTrigger>
@@ -317,8 +249,10 @@ export default function AddStudentPopUp({ open, onOpenChange, onAddStudent, coll
           <div>
             <Label className="mb-2">College</Label>
             <Select
-              value={form.college_id}
-              onValueChange={(v) => setForm((p) => ({ ...p, college_id: v, department_id: "", program_id: "" }))}
+              value={form.college_id ? String(form.college_id) : ""}
+              onValueChange={(v) =>
+                setForm((p) => ({ ...p, college_id: v, department_id: "", program_id: "" }))
+              }
               disabled={collegesLoading}
             >
               <SelectTrigger className={errors.college_id ? "border-red-400" : ""}>
@@ -337,7 +271,7 @@ export default function AddStudentPopUp({ open, onOpenChange, onAddStudent, coll
           <div>
             <Label className="mb-2">Department</Label>
             <Select
-              value={form.department_id}
+              value={form.department_id ? String(form.department_id) : ""}
               onValueChange={(v) => setForm((p) => ({ ...p, department_id: v, program_id: "" }))}
               disabled={deptsLoading || !activeCollegeId}
             >
@@ -358,19 +292,19 @@ export default function AddStudentPopUp({ open, onOpenChange, onAddStudent, coll
             {err("department_id")}
           </div>
 
-          {/* Program — only shown after department is selected */}
+          {/* Program */}
           {form.department_id && (
             <div>
               <Label className="mb-2">Program</Label>
               <Select
-                value={form.program_id}
+                value={form.program_id ? String(form.program_id) : ""}
                 onValueChange={(v) => setForm((p) => ({ ...p, program_id: v }))}
                 disabled={programsLoading}
               >
                 <SelectTrigger className={errors.program_id ? "border-red-400" : ""}>
                   <SelectValue placeholder={
                     programsLoading ? "Loading…" :
-                      programs.length === 0 ? "No programs found for this department" :
+                      programs.length === 0 ? "No programs found" :
                         "Select program"
                   } />
                 </SelectTrigger>
@@ -383,19 +317,18 @@ export default function AddStudentPopUp({ open, onOpenChange, onAddStudent, coll
                 </SelectContent>
               </Select>
               {err("program_id")}
-              {!programsLoading && programs.length === 0 && (
-                <p className="text-xs text-amber-600 mt-1">
-                  No programs found. Add programs to this department first.
-                </p>
-              )}
             </div>
           )}
 
+          {/* Batch Year */}
           <div className="grid grid-cols-3 gap-4">
             <div>
               <Label className="mb-2">Batch Start Year</Label>
-              <Select value={form.batch_start} onValueChange={(v) => setForm((p) => ({ ...p, batch_start: v }))}>
-                <SelectTrigger className={errors.batch_start ? "border-red-400" : ""}>
+              <Select
+                value={form.batch_start || ""}
+                onValueChange={(v) => setForm((p) => ({ ...p, batch_start: v }))}
+              >
+                <SelectTrigger>
                   <SelectValue placeholder="Year" />
                 </SelectTrigger>
                 <SelectContent>
@@ -404,11 +337,13 @@ export default function AddStudentPopUp({ open, onOpenChange, onAddStudent, coll
                   ))}
                 </SelectContent>
               </Select>
-              {err("batch_start")}
             </div>
             <div>
               <Label className="mb-2">Duration (years)</Label>
-              <Select value={form.batch_duration} onValueChange={(v) => setForm((p) => ({ ...p, batch_duration: v }))}>
+              <Select
+                value={form.batch_duration || "4"}
+                onValueChange={(v) => setForm((p) => ({ ...p, batch_duration: v }))}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -425,51 +360,37 @@ export default function AddStudentPopUp({ open, onOpenChange, onAddStudent, coll
             </div>
           </div>
 
+          {/* Semester */}
           <div>
             <Label className="mb-2">Current Semester</Label>
             <Select
-              value={form.current_semester}
+              value={form.current_semester || ""}
               onValueChange={(v) => setForm((p) => ({ ...p, current_semester: v }))}
             >
-              <SelectTrigger className={errors.current_semester ? "border-red-400" : ""}>
+              <SelectTrigger>
                 <SelectValue placeholder="Select semester" />
               </SelectTrigger>
               <SelectContent>
-                {getAvailableSemesters().map((s) => {
-                  const isLast = s === getAvailableSemesters().length;
-                  return (
-                    <SelectItem key={s} value={String(s)}>
-                      Semester {s} {isLast ? "· Current" : "· Completed"}
-                    </SelectItem>
-                  );
-                })}
-                {getAvailableSemesters().length === 0 && (
-                  <div className="px-3 py-2 text-xs text-gray-400">
-                    {!form.batch_start
-                      ? "Select batch start year first"
-                      : Number(form.batch_start) > currentYear
-                        ? "Future batch — no active semesters"
-                        : "No active semesters for this batch"}
-                  </div>
-                )}
+                {Array.from({ length: 8 }, (_, i) => i + 1).map((s) => (
+                  <SelectItem key={s} value={String(s)}>Semester {s}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
-            {err("current_semester")}
           </div>
 
         </div>
 
         <DialogFooter className="flex gap-2 pt-2">
           <Button variant="secondary" onClick={handleClose}>Cancel</Button>
-          <Button onClick={handleSubmit} disabled={createStudentMutation.isPending}>
-            {createStudentMutation.isPending ? "Creating…" : "Add Student"}
+          <Button onClick={handleSubmit} disabled={updateStudentMutation.isPending}>
+            {updateStudentMutation.isPending ? "Saving…" : "Save Changes"}
           </Button>
         </DialogFooter>
 
-        {createStudentMutation.isError && (
+        {updateStudentMutation.isError && (
           <p className="text-sm text-red-500 mt-2 text-center">
-            {createStudentMutation.error?.response?.data?.error ||
-              createStudentMutation.error?.message ||
+            {updateStudentMutation.error?.response?.data?.message ||
+              updateStudentMutation.error?.message ||
               "Something went wrong. Please try again."}
           </p>
         )}
