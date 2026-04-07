@@ -41,7 +41,12 @@ export default function Header() {
     setSelectedBatch,
   } = useFilters();
 
-  const initials = user?.name?.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() || 'AD';
+  const displayName = user?.name
+    ?? (user?.first_name && user?.last_name ? `${user.first_name} ${user.last_name}` : null)
+    ?? user?.email
+    ?? 'Admin';
+  const initials = displayName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+
 
   const handleLogout = async () => {
     await logout();
@@ -147,36 +152,40 @@ export default function Header() {
           <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center pointer-events-none">2</span>
         </div>
 
-        {/* Profile dropdown */}
+        {/* Profile */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="flex items-center gap-2 px-2 py-1.5 h-auto">
-              <Avatar className="h-8 w-8">
-                <AvatarFallback className="text-xs">{initials}</AvatarFallback>
-              </Avatar>
-              <div className="text-left hidden md:block">
-                <div className="text-sm font-medium text-gray-900 leading-tight">{user?.name}</div>
-                <div className="text-xs text-gray-500 leading-tight">{user?.designation}</div>
+            <button className="flex items-center gap-2.5 pl-1 pr-2 py-1 rounded-xl hover:bg-gray-100 transition-colors group outline-none">
+              <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-white font-bold text-xs flex-shrink-0 shadow-sm shadow-indigo-200">
+                {initials}
               </div>
-              <ChevronDown size={14} className="text-gray-400 hidden md:block" />
-            </Button>
+              <div className="hidden sm:flex flex-col items-start min-w-0">
+                <span className="text-sm font-semibold text-gray-800 leading-tight truncate max-w-[110px]">
+                  {displayName}
+                </span>
+                <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-600 text-[10px] font-semibold px-1.5 py-px rounded-full border border-emerald-200 leading-none mt-0.5">
+                  <span className="w-1 h-1 rounded-full bg-emerald-500 inline-block" />
+                  {user?.role}
+                </span>
+              </div>
+              <ChevronDown
+                className="hidden sm:block text-gray-400 group-hover:text-gray-600 transition-colors flex-shrink-0"
+                style={{ width: 14, height: 14 }}
+              />
+            </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-52">
-            <DropdownMenuLabel className="normal-case text-sm font-normal px-3 py-2">
-              <div className="font-medium text-gray-900">{user?.name}</div>
-              <div className="text-xs text-gray-500">{user?.email}</div>
+          <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuLabel className="font-normal">
+              <p className="text-sm font-semibold text-gray-900 truncate">{displayName}</p>
+              <p className="text-xs text-gray-500 truncate">{user?.email}</p>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="gap-2 cursor-pointer">
-              <User size={16} />
-              My Profile
+            <DropdownMenuItem onClick={() => navigate('/settings')}>
+              <User size={14} className="mr-2" /> Profile Settings
             </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={handleLogout}
-              className="gap-2 cursor-pointer text-red-600 focus:bg-red-50 focus:text-red-600"
-            >
-              <LogOut size={16} />
-              Sign Out
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={handleLogout} className="text-red-600 focus:text-red-600">
+              <LogOut size={14} className="mr-2" /> Sign Out
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
