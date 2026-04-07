@@ -64,8 +64,7 @@ export default function Students() {
   const [editStudent, setEditStudent] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
 
-  const { user } = useAuth();
-  const { isSuperAdmin } = useAuth();
+  const { user, isSuperAdmin } = useAuth();
   const { selectedCollege } = useFilters();
 
   // superadmin: fetch by selected college (college_id param); college_admin: scoped by JWT

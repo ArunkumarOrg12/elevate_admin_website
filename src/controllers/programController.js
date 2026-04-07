@@ -6,16 +6,12 @@ export function useGetPrograms(collegeId, departmentId) {
   return useQuery({
     queryKey: ["programs", collegeId, departmentId],
     queryFn: async () => {
-      const res = await api.get(ADMIN_PATHS.PROGRAMS, {
-        params: {
-          college_id: collegeId,
-          ...(departmentId && { department_id: departmentId }),
-        },
-      });
-      console.log("Programs raw response:", res); // check shape
-      return res?.programs ?? [];   // ← unwrap like departments
+      const params = { limit: 100 };
+      if (collegeId) params.college_id = collegeId;
+      if (departmentId) params.department_id = departmentId;
+      const res = await api.get(ADMIN_PATHS.PROGRAMS, { params });
+      return res?.programs ?? [];
     },
-    enabled: !!collegeId,
   });
 }
 

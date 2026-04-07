@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select';
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '@/components/ui/table';
 import { useAuth } from '../hooks/useAuth';
+import { useFilters } from '../context/FilterContext';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useGetPrograms, useCreateProgram, useUpdateProgram, useDeleteProgram } from '../controllers/programController';
 import { useDepartments } from '../controllers/departmentsController';
@@ -15,14 +16,18 @@ import { useDepartments } from '../controllers/departmentsController';
 const DURATIONS = [1, 2, 3, 4, 5];
 
 export default function Programs() {
-  const { user } = useAuth();
+  const { user, isSuperAdmin } = useAuth();
+  const { selectedCollege } = useFilters();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
   // Read filters from URL (set when navigating from Departments page)
   const urlDepartmentId   = searchParams.get('department_id');
   const urlDepartmentName = searchParams.get('department_name');
-const collegeId = searchParams.get('college_id') || user?.college_id;
+  // URL param takes priority (from Departments → Programs nav); fall back to FilterContext or user's college
+  const collegeId = searchParams.get('college_id')
+    ?? (isSuperAdmin ? selectedCollege?.id : user?.college_id)
+    ?? undefined;
 
   const [filterDeptId, setFilterDeptId] = useState(urlDepartmentId || '');
 

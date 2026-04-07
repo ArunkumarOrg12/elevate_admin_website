@@ -29,8 +29,7 @@ export function useDepartments(params) {
   return useQuery({
     queryKey: [...QUERY_KEYS.DEPARTMENTS, params],
     queryFn: async () => {
-      const res = await departmentsApi.getAll(params);
-      console.log("Departments raw response:", res); // check what shape it is
+      const res = await departmentsApi.getAll({ limit: 100, ...params });
       return res?.departments ?? res?.data?.departments ?? [];
     },
   });

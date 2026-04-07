@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '@/components/ui/table';
 import { useAuth } from '../hooks/useAuth';
+import { useFilters } from '../context/FilterContext';
 import { useNavigate } from 'react-router-dom';
 import {
   useDepartments,
@@ -16,12 +17,15 @@ import {
 } from '../controllers/departmentsController';
 
 export default function Departments() {
-  const { user } = useAuth();
+  const { user, isSuperAdmin } = useAuth();
+  const { selectedCollege } = useFilters();
   const navigate = useNavigate();
 
+  const effectiveCollegeId = isSuperAdmin ? selectedCollege?.id : user?.college_id;
+
   const { data: departments = [], isLoading, refetch } = useDepartments(
-  user?.college_id ? { college_id: user.college_id } : undefined
-);
+    effectiveCollegeId ? { college_id: effectiveCollegeId } : undefined
+  );
 
   const createDepartment = useCreateDepartment();
   const updateDepartment = useUpdateDepartment();
@@ -47,7 +51,7 @@ export default function Departments() {
     if (!validate()) return;
     const payload = {
       ...formData,
-      college_id: user?.college_id,
+      college_id: effectiveCollegeId,
     };
     try {
       if (isEditMode) {
@@ -160,7 +164,7 @@ export default function Departments() {
                     </TableCell>
                     <TableCell>
                       <button
-                        onClick={() => navigate(`/programs?department_id=${d.id}&department_name=${encodeURIComponent(d.name)}&college_id=${user?.college_id}`)}
+                        onClick={() => navigate(`/programs?department_id=${d.id}&department_name=${encodeURIComponent(d.name)}&college_id=${effectiveCollegeId}`)}
                         className="flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-800 font-medium"
                       >
                         View Programs <ArrowRight size={12} />

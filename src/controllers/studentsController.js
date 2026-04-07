@@ -27,7 +27,7 @@ export const useGetAllStudents = ({ isSuperAdmin = false, collegeId = null } = {
       }
       return response.data ?? response;
     },
-    enabled: isSuperAdmin ? true : true, // always enabled; superadmin may have no college yet
+    enabled: true,
   });
 };
 
