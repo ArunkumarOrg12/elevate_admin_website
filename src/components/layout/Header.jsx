@@ -1,7 +1,8 @@
-import { useState, useContext } from 'react';
+import { useContext } from 'react';
 import { Bell, Search, ChevronDown, LogOut, User, Menu } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { SidebarContext } from '../../context/SidebarContext';
+import { useFilters } from '../../context/FilterContext';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -22,31 +23,34 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 
-const COLLEGES = [
-  'Presidency Engineering College',
-  'PSG College of Technology',
-  'SSN College of Engineering',
-  'Kumaraguru College of Technology',
-];
-
-const AY_OPTIONS = ['2024-25', '2023-24', '2022-23'];
-const BATCH_OPTIONS = ['Batch 2025', 'Batch 2024', 'Batch 2023'];
-
 export default function Header() {
   const { user, logout, isSuperAdmin } = useAuth();
   const { setMobileOpen } = useContext(SidebarContext);
   const navigate = useNavigate();
-  const [selectedCollege, setSelectedCollege] = useState(
-    isSuperAdmin ? COLLEGES[0] : user?.college?.name
-  );
-  const [selectedAY, setSelectedAY] = useState('2024-25');
-  const [selectedBatch, setSelectedBatch] = useState('Batch 2025');
+
+  const {
+    colleges,
+    collegesLoading,
+    selectedCollege,
+    setSelectedCollege,
+    ayOptions,
+    selectedAY,
+    setSelectedAY,
+    batchOptions,
+    selectedBatch,
+    setSelectedBatch,
+  } = useFilters();
 
   const initials = user?.name?.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() || 'AD';
 
   const handleLogout = async () => {
     await logout();
     navigate('/sign-in');
+  };
+
+  const handleCollegeChange = (id) => {
+    const college = colleges.find(c => (c.id ?? c._id) === id);
+    if (college) setSelectedCollege(college);
   };
 
   return (
@@ -66,17 +70,28 @@ export default function Header() {
       <div className="flex items-center gap-2 flex-shrink-0">
         {/* College dropdown */}
         {isSuperAdmin ? (
-          <Select value={selectedCollege} onValueChange={setSelectedCollege}>
+          <Select
+            value={selectedCollege ? (selectedCollege.id ?? selectedCollege._id ?? '') : ''}
+            onValueChange={handleCollegeChange}
+            disabled={collegesLoading}
+          >
             <SelectTrigger className="text-sm font-medium max-w-[130px] sm:max-w-[200px] md:max-w-none">
-              <SelectValue />
+              <SelectValue placeholder={collegesLoading ? 'Loading…' : 'Select college'} />
             </SelectTrigger>
             <SelectContent>
-              {COLLEGES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+              {colleges.map(c => {
+                const cid = c.id ?? c._id;
+                return (
+                  <SelectItem key={cid} value={cid}>
+                    {c.name}
+                  </SelectItem>
+                );
+              })}
             </SelectContent>
           </Select>
         ) : (
           <div className="text-sm font-medium border border-gray-200 rounded-[9px] px-3 py-1.5 text-gray-600 bg-gray-50 max-w-[130px] sm:max-w-[200px] md:max-w-none truncate">
-            {user?.college?.name}
+            {selectedCollege?.name ?? user?.college?.name}
           </div>
         )}
 
@@ -87,22 +102,22 @@ export default function Header() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {AY_OPTIONS.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
+              {ayOptions.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>
 
         {/* Batch — hidden on mobile */}
-        <div className="hidden sm:block">
+        {/* <div className="hidden sm:block">
           <Select value={selectedBatch} onValueChange={setSelectedBatch}>
             <SelectTrigger className="text-sm w-[110px]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {BATCH_OPTIONS.map(b => <SelectItem key={b} value={b}>{b}</SelectItem>)}
+              {batchOptions.map(b => <SelectItem key={b} value={b}>{b}</SelectItem>)}
             </SelectContent>
           </Select>
-        </div>
+        </div> */}
       </div>
 
       {/* Search — hidden on mobile */}

@@ -27,7 +27,7 @@ const collegesApi = {
 };
 
 // ── Hooks ─────────────────────────────────────────────────────────────────────
-export function useColleges(params) {
+export function useColleges(params, options = {}) {
   return useQuery({
     queryKey: [...QUERY_KEYS.COLLEGES, params],
     queryFn: () => collegesApi.getAll(params),
@@ -38,6 +38,7 @@ export function useColleges(params) {
       if (Array.isArray(res?.data)) return res.data;
       return [];
     },
+    ...options,
   });
 }
 

@@ -6,6 +6,7 @@ import './index.css'
 import App from './App.jsx'
 import { AuthProvider } from './context/AuthContext.jsx'
 import { SidebarProvider } from './context/SidebarContext.jsx'
+import { FilterProvider } from './context/FilterContext.jsx'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -21,9 +22,11 @@ createRoot(document.getElementById('root')).render(
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <AuthProvider>
-          <SidebarProvider>
-            <App />
-          </SidebarProvider>
+          <FilterProvider>
+            <SidebarProvider>
+              <App />
+            </SidebarProvider>
+          </FilterProvider>
         </AuthProvider>
       </BrowserRouter>
     </QueryClientProvider>
