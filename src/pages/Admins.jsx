@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/table";
 
 import { useAuth } from "../hooks/useAuth";
-import { useDeleteAdmin, useGetAllAdmins } from "../controllers/adminController";
+import { useDeleteAdmin, useGetAllAdmins, useGetColleges } from "../controllers/adminController";
 import AddAdminDialog from "../components/AddAdminPopUp";
 import {
   Dialog, DialogContent, DialogHeader,
@@ -44,6 +44,7 @@ export default function Admins() {
 
   const { user } = useAuth();
  const { data: responseData, isLoading, isError,error } = useGetAllAdmins();
+const { data: colleges = [] } = useGetColleges();
 const deleteAdminMutation = useDeleteAdmin();
 
 
@@ -52,13 +53,12 @@ const deleteAdminMutation = useDeleteAdmin();
 const rawUsers = responseData?.admins || [];
 
 const admins = rawUsers
-  .filter((u) => u.id !== user?.id)  // ← exclude currently logged-in admin
   .map((u) => ({
     id: u.id,
     name: `${u.first_name} ${u.last_name}`,
     email: u.email,
     role: u.role,
-    college: u.college?.name || "N/A",
+    college: u.college?.name || colleges.find(c => c.id === u.college_id)?.name || "N/A",
     lastLogin: u.last_login ? new Date(u.last_login) : null,
     createdAt: new Date(u.createdAt),
   }));
@@ -123,9 +123,9 @@ const handleDelete = () => {
   const paged = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
 
  const counts = {
-  total: admins.length,
-  superadmin: admins.filter(a => a.role === "superadmin").length,
-  collegeAdmin: admins.filter(a => a.role === "college_admin").length,
+  total: responseData?.pagination?.total ?? rawUsers.length,
+  superadmin: rawUsers.filter(u => u.role === "superadmin").length,
+  collegeAdmin: rawUsers.filter(u => u.role === "college_admin").length,
 };
 
  const COLS = [

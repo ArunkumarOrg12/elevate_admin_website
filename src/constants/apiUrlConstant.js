@@ -69,8 +69,9 @@ export const QUERY_KEYS = {
 };
 
 export const STUDENT_API = {
-  GET_ALL_STUDENTS: '/api/v1/student',
-  CREATE_STUDENT:   '/api/v1/student',
-  DEPARTMENTS:      '/api/v1/department/departments',  // ← used by useGetDepartments
-  BULK_UPLOAD: '/api/v1/student/bulk-upload'
+  GET_ALL_STUDENTS:        '/api/v1/student',
+  GET_MY_COLLEGE_STUDENTS: '/api/v1/student/my-college/students',
+  CREATE_STUDENT:          '/api/v1/student',
+  DEPARTMENTS:             '/api/v1/department/departments',  // ← used by useGetDepartments
+  BULK_UPLOAD:             '/api/v1/student/bulk-upload'
 };

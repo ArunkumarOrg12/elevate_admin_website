@@ -16,7 +16,10 @@ export function setAuthToken(token) {
 const api = axios.create({
   baseURL: BASE_URL,
   timeout: 10_000,
-  headers: { 'Content-Type': 'application/json' },
+  headers: {
+    'Content-Type': 'application/json',
+    'Cache-Control': 'no-cache',
+  },
   withCredentials: true, // send / receive httpOnly cookies on every request
 });
 

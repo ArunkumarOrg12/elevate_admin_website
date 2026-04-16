@@ -81,37 +81,79 @@ function CreateCycleDialog({ open, onOpenChange }) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-3xl">
+        <DialogHeader className="pb-3 border-b border-gray-100">
           <DialogTitle>Create Cycle</DialogTitle>
           <DialogDescription>Create a new assessment cycle</DialogDescription>
         </DialogHeader>
-        <div className="px-6 py-4 space-y-4">
-          <div className="space-y-1.5">
-            <Label>Cycle Title <span className="text-red-500">*</span></Label>
-            <Input
-              placeholder="e.g. Quantitative Aptitude Assessment"
-              value={form.title}
-              onChange={e => setForm(p => ({ ...p, title: e.target.value }))}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label>Description</Label>
-            <textarea
-              rows={2}
-              placeholder="Brief description of this assessment cycle"
-              value={form.description}
-              onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
-              className="w-full rounded-[9px] border border-gray-200 px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors"
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
+        <div className="px-6 py-4 grid grid-cols-2 gap-x-5 gap-y-3">
+          {/* Left column */}
+          <div className="space-y-3">
             <div className="space-y-1.5">
-              <Label>Batch</Label>
+              <Label>Cycle Title <span className="text-red-500">*</span></Label>
               <Input
-                placeholder="e.g. 2024"
-                value={form.batch}
-                onChange={e => setForm(p => ({ ...p, batch: e.target.value }))}
+                placeholder="e.g. Quantitative Aptitude Assessment"
+                value={form.title}
+                onChange={e => setForm(p => ({ ...p, title: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Description</Label>
+              <textarea
+                rows={2}
+                placeholder="Brief description of this assessment cycle"
+                value={form.description}
+                onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
+                className="w-full rounded-[9px] border border-gray-200 px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Batch Year</Label>
+              <div className="flex items-center gap-2">
+                <Select
+                  value={form.batch?.split('-')[0] || undefined}
+                  onValueChange={val => {
+                    const end = form.batch?.split('-')[1] || '';
+                    setForm(p => ({ ...p, batch: end ? `${val}-${end}` : val }));
+                  }}
+                >
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="From" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Array.from({ length: 11 }, (_, i) => new Date().getFullYear() - 5 + i).map(y => (
+                      <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <span className="text-gray-400 text-sm">–</span>
+                <Select
+                  value={form.batch?.split('-')[1] || undefined}
+                  onValueChange={val => {
+                    const start = form.batch?.split('-')[0] || '';
+                    setForm(p => ({ ...p, batch: start ? `${start}-${val}` : val }));
+                  }}
+                >
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="To" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Array.from({ length: 11 }, (_, i) => new Date().getFullYear() - 5 + i).map(y => (
+                      <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Mins / Question</Label>
+              <Input
+                type="number"
+                min="0.5"
+                step="0.5"
+                placeholder="e.g. 1.5"
+                value={form.minutes_per_question}
+                onChange={e => setForm(p => ({ ...p, minutes_per_question: e.target.value }))}
               />
             </div>
             <div className="space-y-1.5">
@@ -122,7 +164,7 @@ function CreateCycleDialog({ open, onOpenChange }) {
                 disabled={psLoading}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder={psLoading ? 'Loading...' : 'Select'} />
+                  <SelectValue placeholder={psLoading ? 'Loading...' : 'Select paper set'} />
                 </SelectTrigger>
                 <SelectContent>
                   {paperSets.map((ps, i) => {
@@ -133,86 +175,79 @@ function CreateCycleDialog({ open, onOpenChange }) {
                 </SelectContent>
               </Select>
             </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>Start Date</Label>
+                <Popover open={calOpen.start} onOpenChange={v => setCalOpen(p => ({ ...p, start: v }))}>
+                  <PopoverTrigger asChild>
+                    <button className={`flex h-9 w-full items-center gap-2 rounded-[9px] border border-gray-200 bg-white px-3 py-1.5 text-sm ${form.start_date ? 'text-gray-900' : 'text-gray-400'}`}>
+                      <Calendar size={14} className="text-gray-400" />
+                      {form.start_date ? format(form.start_date, 'dd MMM yyyy') : 'Pick date'}
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent align="start" className="w-auto p-0">
+                    <CalendarComponent
+                      mode="single"
+                      selected={form.start_date}
+                      onSelect={d => { setForm(p => ({ ...p, start_date: d ?? null })); setCalOpen(p => ({ ...p, start: false })); }}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <div className="space-y-1.5">
+                <Label>End Date</Label>
+                <Popover open={calOpen.end} onOpenChange={v => setCalOpen(p => ({ ...p, end: v }))}>
+                  <PopoverTrigger asChild>
+                    <button className={`flex h-9 w-full items-center gap-2 rounded-[9px] border border-gray-200 bg-white px-3 py-1.5 text-sm ${form.end_date ? 'text-gray-900' : 'text-gray-400'}`}>
+                      <Calendar size={14} className="text-gray-400" />
+                      {form.end_date ? format(form.end_date, 'dd MMM yyyy') : 'Pick date'}
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent align="start" className="w-auto p-0">
+                    <CalendarComponent
+                      mode="single"
+                      selected={form.end_date}
+                      onSelect={d => { setForm(p => ({ ...p, end_date: d ?? null })); setCalOpen(p => ({ ...p, end: false })); }}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+
+          {/* Right column */}
+          <div className="space-y-3">
             <div className="space-y-1.5">
-              <Label>Start Date</Label>
-              <Popover open={calOpen.start} onOpenChange={v => setCalOpen(p => ({ ...p, start: v }))}>
-                <PopoverTrigger asChild>
-                  <button className={`flex h-9 w-full items-center gap-2 rounded-[9px] border border-gray-200 bg-white px-3 py-1.5 text-sm ${form.start_date ? 'text-gray-900' : 'text-gray-400'}`}>
-                    <Calendar size={14} className="text-gray-400" />
-                    {form.start_date ? format(form.start_date, 'dd MMM yyyy') : 'Pick date'}
-                  </button>
-                </PopoverTrigger>
-                <PopoverContent align="start" className="w-auto p-0">
-                  <CalendarComponent
-                    mode="single"
-                    selected={form.start_date}
-                    onSelect={d => { setForm(p => ({ ...p, start_date: d ?? null })); setCalOpen(p => ({ ...p, start: false })); }}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
+              <Label>
+                Topics Covered
+                <span className="ml-1 text-xs text-gray-400 font-normal">(one per line)</span>
+              </Label>
+              <textarea
+                rows={6}
+                placeholder={"Quantitative Reasoning\nLogical Reasoning\nData Interpretation"}
+                value={form.topics_covered}
+                onChange={e => setForm(p => ({ ...p, topics_covered: e.target.value }))}
+                className="w-full rounded-[9px] border border-gray-200 px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors"
+              />
             </div>
             <div className="space-y-1.5">
-              <Label>End Date</Label>
-              <Popover open={calOpen.end} onOpenChange={v => setCalOpen(p => ({ ...p, end: v }))}>
-                <PopoverTrigger asChild>
-                  <button className={`flex h-9 w-full items-center gap-2 rounded-[9px] border border-gray-200 bg-white px-3 py-1.5 text-sm ${form.end_date ? 'text-gray-900' : 'text-gray-400'}`}>
-                    <Calendar size={14} className="text-gray-400" />
-                    {form.end_date ? format(form.end_date, 'dd MMM yyyy') : 'Pick date'}
-                  </button>
-                </PopoverTrigger>
-                <PopoverContent align="start" className="w-auto p-0">
-                  <CalendarComponent
-                    mode="single"
-                    selected={form.end_date}
-                    onSelect={d => { setForm(p => ({ ...p, end_date: d ?? null })); setCalOpen(p => ({ ...p, end: false })); }}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
+              <Label>
+                Instructions
+                <span className="ml-1 text-xs text-gray-400 font-normal">(one per line)</span>
+              </Label>
+              <textarea
+                rows={6}
+                placeholder={"Read each question carefully before answering\nYou can flag questions to review later\nTimer will start once you begin the assessment"}
+                value={form.instructions}
+                onChange={e => setForm(p => ({ ...p, instructions: e.target.value }))}
+                className="w-full rounded-[9px] border border-gray-200 px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors"
+              />
             </div>
-          </div>
-          <div className="space-y-1.5">
-            <Label>Minutes per Question</Label>
-            <Input
-              type="number"
-              min="0.5"
-              step="0.5"
-              placeholder="e.g. 1.5"
-              value={form.minutes_per_question}
-              onChange={e => setForm(p => ({ ...p, minutes_per_question: e.target.value }))}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label>
-              Topics Covered
-              <span className="ml-1 text-xs text-gray-400 font-normal">(one per line)</span>
-            </Label>
-            <textarea
-              rows={3}
-              placeholder={"Quantitative Reasoning\nLogical Reasoning\nData Interpretation"}
-              value={form.topics_covered}
-              onChange={e => setForm(p => ({ ...p, topics_covered: e.target.value }))}
-              className="w-full rounded-[9px] border border-gray-200 px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors"
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label>
-              Instructions
-              <span className="ml-1 text-xs text-gray-400 font-normal">(one per line)</span>
-            </Label>
-            <textarea
-              rows={4}
-              placeholder={"Read each question carefully before answering\nYou can flag questions to review later\nTimer will start once you begin the assessment"}
-              value={form.instructions}
-              onChange={e => setForm(p => ({ ...p, instructions: e.target.value }))}
-              className="w-full rounded-[9px] border border-gray-200 px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors"
-            />
           </div>
         </div>
-        <DialogFooter>
+        <DialogFooter className="pt-3 border-t border-gray-100">
           <Button variant="secondary" onClick={() => onOpenChange(false)}>Cancel</Button>
           <Button onClick={handleCreate} disabled={createMutation.isPending || !form.title.trim()}>
             {createMutation.isPending ? <><Loader2 size={14} className="animate-spin" /> Creating...</> : 'Create Cycle'}
@@ -345,6 +380,8 @@ export default function Cycles() {
   const [searchQ, setSearchQ] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterBatch, setFilterBatch] = useState('all');
+  const [page, setPage] = useState(1);
+  const PER_PAGE = 8;
 
   const { data, isLoading, isError } = useCycles();
   const changeStatusMutation = useChangeCycleStatus();
@@ -367,6 +404,10 @@ export default function Cycles() {
       return matchSearch && matchStatus && matchBatch;
     });
   }, [cycles, searchQ, filterStatus, filterBatch]);
+
+  const total = filtered.length;
+  const pages = Math.ceil(total / PER_PAGE);
+  const paged = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
 
   const stats = {
     total: cycles.length,
@@ -431,11 +472,11 @@ export default function Cycles() {
                   type="text"
                   placeholder="Search cycles..."
                   value={searchQ}
-                  onChange={e => setSearchQ(e.target.value)}
+                  onChange={e => { setSearchQ(e.target.value); setPage(1); }}
                   className="h-8 pl-7 pr-3 text-xs rounded-[8px] border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent w-44"
                 />
               </div>
-              <Select value={filterStatus} onValueChange={setFilterStatus}>
+              <Select value={filterStatus} onValueChange={(v) => { setFilterStatus(v); setPage(1); }}>
                 <SelectTrigger className="h-8 text-xs w-32 gap-1">
                   <Filter size={11} className="text-gray-400" />
                   <SelectValue />
@@ -448,7 +489,7 @@ export default function Cycles() {
                 </SelectContent>
               </Select>
               {batches.length > 0 && (
-                <Select value={filterBatch} onValueChange={setFilterBatch}>
+                <Select value={filterBatch} onValueChange={(v) => { setFilterBatch(v); setPage(1); }}>
                   <SelectTrigger className="h-8 text-xs w-32">
                     <SelectValue placeholder="All Batches" />
                   </SelectTrigger>
@@ -487,7 +528,7 @@ export default function Cycles() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.map(cycle => {
+                {paged.map(cycle => {
                   const cId = cycle.id || cycle._id;
                   const isPublished = cycle.result_published ?? cycle.is_published ?? cycle.isPublished ?? false;
                   const isPubPending = publishMutation.isPending || unpublishMutation.isPending;
@@ -629,6 +670,26 @@ export default function Cycles() {
                 })}
               </TableBody>
             </Table>
+          </div>
+        )}
+        {pages > 1 && (
+          <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100 bg-gray-50">
+            <p className="text-xs text-gray-500">
+              Showing {total === 0 ? 0 : Math.min((page - 1) * PER_PAGE + 1, total)}–{Math.min(page * PER_PAGE, total)} of {total} cycles
+            </p>
+            <div className="flex gap-1">
+              {Array.from({ length: pages }, (_, i) => i + 1).map((p) => (
+                <Button
+                  key={p}
+                  variant={page === p ? 'default' : 'ghost'}
+                  size="icon"
+                  className={`w-7 h-7 text-xs ${page !== p ? 'text-gray-600 hover:bg-gray-200' : ''}`}
+                  onClick={() => setPage(p)}
+                >
+                  {p}
+                </Button>
+              ))}
+            </div>
           </div>
         )}
       </Card>

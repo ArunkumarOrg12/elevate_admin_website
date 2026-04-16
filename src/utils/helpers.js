@@ -50,6 +50,11 @@ export function getEIBgClass(ei) {
   return 'bg-red-100 text-red-800';
 }
 
+export function formatBatchYear(year) {
+  if (!year || year === "N/A") return year ?? "N/A";
+  return String(year);
+}
+
 export function ordinalSuffix(n) {
   const s = ['th','st','nd','rd'];
   const v = n % 100;

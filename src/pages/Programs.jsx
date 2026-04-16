@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select';
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '@/components/ui/table';
 import { useAuth } from '../hooks/useAuth';
+import { useFilters } from '../context/FilterContext';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useGetPrograms, useCreateProgram, useUpdateProgram, useDeleteProgram } from '../controllers/programController';
 import { useDepartments } from '../controllers/departmentsController';
@@ -15,14 +16,18 @@ import { useDepartments } from '../controllers/departmentsController';
 const DURATIONS = [1, 2, 3, 4, 5];
 
 export default function Programs() {
-  const { user } = useAuth();
+  const { user, isSuperAdmin } = useAuth();
+  const { selectedCollege } = useFilters();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
   // Read filters from URL (set when navigating from Departments page)
   const urlDepartmentId   = searchParams.get('department_id');
   const urlDepartmentName = searchParams.get('department_name');
-const collegeId = searchParams.get('college_id') || user?.college_id;
+  // URL param takes priority (from Departments → Programs nav); fall back to FilterContext or user's college
+  const collegeId = searchParams.get('college_id')
+    ?? (isSuperAdmin ? selectedCollege?.id : user?.college_id)
+    ?? undefined;
 
   const [filterDeptId, setFilterDeptId] = useState(urlDepartmentId || '');
 
@@ -37,6 +42,8 @@ const collegeId = searchParams.get('college_id') || user?.college_id;
   const [formData, setFormData]         = useState({ name: '', code: '', duration_years: '3', department_id: urlDepartmentId || '' });
   const [formErrors, setFormErrors]     = useState({});
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [page, setPage]                 = useState(1);
+  const PER_PAGE = 8;
 
   const validate = () => {
     const e = {};
@@ -105,6 +112,10 @@ const collegeId = searchParams.get('college_id') || user?.college_id;
     ? departments.find(d => String(d.id) === String(filterDeptId))?.name
     : null;
 
+  const total = programs.length;
+  const pages = Math.ceil(total / PER_PAGE);
+  const paged = programs.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+
   return (
     <div className="page-enter space-y-5">
 
@@ -129,7 +140,7 @@ const collegeId = searchParams.get('college_id') || user?.college_id;
         </div>
         <div className="flex gap-2 flex-shrink-0">
           {/* Department filter */}
-         <Select value={filterDeptId || "all"} onValueChange={(v) => setFilterDeptId(v === "all" ? "" : v)}>
+         <Select value={filterDeptId || "all"} onValueChange={(v) => { setFilterDeptId(v === "all" ? "" : v); setPage(1); }}>
   <SelectTrigger className="w-48 text-sm">
     <SelectValue placeholder="All Departments" />
   </SelectTrigger>
@@ -183,7 +194,7 @@ const collegeId = searchParams.get('college_id') || user?.college_id;
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {programs.map((p) => (
+                {paged.map((p) => (
                   <TableRow key={p.id} className="hover:bg-gray-50">
                     <TableCell className="font-medium text-gray-900">{p.name}</TableCell>
                     <TableCell>
@@ -220,12 +231,32 @@ const collegeId = searchParams.get('college_id') || user?.college_id;
               </TableBody>
             </Table>
           )}
+          {pages > 1 && (
+            <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100 bg-gray-50">
+              <p className="text-xs text-gray-500">
+                Showing {total === 0 ? 0 : Math.min((page - 1) * PER_PAGE + 1, total)}–{Math.min(page * PER_PAGE, total)} of {total} programs
+              </p>
+              <div className="flex gap-1">
+                {Array.from({ length: pages }, (_, i) => i + 1).map((p) => (
+                  <Button
+                    key={p}
+                    variant={page === p ? 'default' : 'ghost'}
+                    size="icon"
+                    className={`w-7 h-7 text-xs ${page !== p ? 'text-gray-600 hover:bg-gray-200' : ''}`}
+                    onClick={() => setPage(p)}
+                  >
+                    {p}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
       {/* Add / Edit Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md p-4">
           <DialogHeader>
             <DialogTitle>{isEditMode ? 'Edit Program' : 'Add Program'}</DialogTitle>
             <DialogDescription>

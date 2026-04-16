@@ -1,6 +1,6 @@
 // CollegeManagement.jsx
 import { useState } from 'react';
-import { Plus, Edit2, Trash2, Building, X, Globe, Mail, Phone, MapPin, Hash } from 'lucide-react';
+import { Plus, Edit2, Trash2, Building } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -17,7 +17,6 @@ import {
   useColleges, useCreateCollege,
   useUpdateCollege, useDeleteCollege,
 } from '../controllers/collegesController';
-import { getEIColor } from '../utils/helpers';
 
 // ── Form shape matching CollegeAttributes ─────────────────────────────────────
 const EMPTY_FORM = {
@@ -44,14 +43,19 @@ function CollegeFormDialog({ open, onOpenChange, college }) {
     address:       college.address       ?? '',
     contact_email: college.contact_email ?? '',
     contact_phone: college.contact_phone ?? '',
-  } : EMPTY_FORM);
+  } : { ...EMPTY_FORM });
   const [errors, setErrors] = useState({});
 
   const createMutation = useCreateCollege();
   const updateMutation = useUpdateCollege();
   const isPending = createMutation.isPending || updateMutation.isPending;
 
-  const set = (key) => (e) => setForm(p => ({ ...p, [key]: e.target.value }));
+  const set = (key) => (e) => {
+    setForm(p => ({ ...p, [key]: e.target.value }));
+    if (errors[key]) setErrors(p => ({ ...p, [key]: undefined }));
+    if (createMutation.isError) createMutation.reset();
+    if (updateMutation.isError) updateMutation.reset();
+  };
 
   const validate = () => {
     const e = {};
@@ -92,7 +96,7 @@ function CollegeFormDialog({ open, onOpenChange, college }) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg w-full max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl p-8 w-full max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{isEdit ? 'Edit College' : 'Add College'}</DialogTitle>
           <DialogDescription>
@@ -102,12 +106,14 @@ function CollegeFormDialog({ open, onOpenChange, college }) {
 
         <div className="space-y-4 py-2">
 
-          {/* Name + Code */}
+          {/* ── Institution Details ── */}
+          <p className="text-xs font-semibold uppercase tracking-widest text-gray-400">
+            Institution Details
+          </p>
+
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label className="mb-1.5 flex items-center gap-1.5">
-                <Building size={12} className="text-gray-400" /> College Name <span className="text-red-400">*</span>
-              </Label>
+              <Label className="mb-2">College Name <span className="text-red-400">*</span></Label>
               <Input
                 placeholder="e.g. VIT University"
                 value={form.name}
@@ -117,14 +123,12 @@ function CollegeFormDialog({ open, onOpenChange, college }) {
               <FieldError msg={errors.name} />
             </div>
             <div>
-              <Label className="mb-1.5 flex items-center gap-1.5">
-                <Hash size={12} className="text-gray-400" /> College Code <span className="text-red-400">*</span>
-              </Label>
+              <Label className="mb-2">College Code <span className="text-red-400">*</span></Label>
               <Input
                 placeholder="e.g. VIT01"
                 value={form.code}
                 onChange={set('code')}
-                disabled={isEdit} // code is immutable after creation
+                disabled={isEdit}
                 className={errors.code ? 'border-red-400' : isEdit ? 'bg-gray-50 text-gray-400' : ''}
               />
               {isEdit
@@ -133,11 +137,8 @@ function CollegeFormDialog({ open, onOpenChange, college }) {
             </div>
           </div>
 
-          {/* Domain */}
           <div>
-            <Label className="mb-1.5 flex items-center gap-1.5">
-              <Globe size={12} className="text-gray-400" /> Domain
-            </Label>
+            <Label className="mb-2">Domain</Label>
             <Input
               placeholder="e.g. vit.ac.in"
               value={form.domain}
@@ -145,11 +146,8 @@ function CollegeFormDialog({ open, onOpenChange, college }) {
             />
           </div>
 
-          {/* Address */}
           <div>
-            <Label className="mb-1.5 flex items-center gap-1.5">
-              <MapPin size={12} className="text-gray-400" /> Address
-            </Label>
+            <Label className="mb-2">Address</Label>
             <Input
               placeholder="e.g. Vellore, Tamil Nadu"
               value={form.address}
@@ -157,12 +155,14 @@ function CollegeFormDialog({ open, onOpenChange, college }) {
             />
           </div>
 
-          {/* Contact */}
+          {/* ── Contact Information ── */}
+          <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 pt-2">
+            Contact Information
+          </p>
+
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label className="mb-1.5 flex items-center gap-1.5">
-                <Mail size={12} className="text-gray-400" /> Contact Email
-              </Label>
+              <Label className="mb-2">Contact Email</Label>
               <Input
                 type="email"
                 placeholder="admin@vit.ac.in"
@@ -173,9 +173,7 @@ function CollegeFormDialog({ open, onOpenChange, college }) {
               <FieldError msg={errors.contact_email} />
             </div>
             <div>
-              <Label className="mb-1.5 flex items-center gap-1.5">
-                <Phone size={12} className="text-gray-400" /> Contact Phone
-              </Label>
+              <Label className="mb-2">Contact Phone</Label>
               <Input
                 placeholder="+91 9876543210"
                 value={form.contact_phone}
@@ -186,16 +184,16 @@ function CollegeFormDialog({ open, onOpenChange, college }) {
 
         </div>
 
-        {apiError && (
-          <p className="text-sm text-red-500 text-center">{apiError}</p>
-        )}
-
-        <DialogFooter className="gap-2">
+        <DialogFooter className="flex gap-2 pt-2">
           <Button variant="secondary" onClick={() => onOpenChange(false)}>Cancel</Button>
           <Button onClick={handleSubmit} disabled={isPending}>
             {isPending ? (isEdit ? 'Saving…' : 'Creating…') : (isEdit ? 'Save Changes' : 'Add College')}
           </Button>
         </DialogFooter>
+
+        {apiError && (
+          <p className="text-sm text-red-500 mt-2 text-center">{apiError}</p>
+        )}
       </DialogContent>
     </Dialog>
   );
@@ -213,26 +211,26 @@ function DeleteCollegeDialog({ open, onOpenChange, college }) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm">
+      <DialogContent className="max-w-md p-8">
         <DialogHeader>
-          <div className="flex items-center gap-3 mb-1">
-            <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
-              <Trash2 size={18} className="text-red-600" />
+          <div className="flex items-center gap-4 mb-2">
+            <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+              <Trash2 size={20} className="text-red-600" />
             </div>
             <div>
-              <DialogTitle className="text-sm font-semibold text-gray-900">Delete College</DialogTitle>
-              <DialogDescription className="text-xs text-gray-500">This action cannot be undone</DialogDescription>
+              <DialogTitle className="text-base font-semibold text-gray-900">Delete College</DialogTitle>
+              <DialogDescription className="text-sm text-gray-500">This action cannot be undone</DialogDescription>
             </div>
           </div>
         </DialogHeader>
 
-        <p className="text-sm text-gray-700">
+        <p className="text-sm text-gray-700 leading-relaxed">
           Are you sure you want to delete{' '}
-          <span className="font-semibold">{college?.name}</span>?
+          <span className="font-semibold text-gray-900">{college?.name}</span>?
           All associated departments, programs, and students will be affected.
         </p>
 
-        <DialogFooter className="gap-2 pt-2">
+        <DialogFooter className="flex gap-2 pt-4">
           <Button variant="secondary" onClick={() => onOpenChange(false)}>Cancel</Button>
           <Button
             variant="destructive"
@@ -252,11 +250,16 @@ export default function CollegeManagement() {
   const [showAdd, setShowAdd]         = useState(false);
   const [editTarget, setEditTarget]   = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [page, setPage]               = useState(1);
+  const PER_PAGE = 8;
 
   const { data, isLoading, isError } = useColleges();
 
-  // Handle both response shapes: { colleges: [...] } or direct array
-  const colleges = data?.colleges ?? data?.data?.colleges ?? data ?? [];
+  // `select` in useColleges normalises the response to a plain array
+  const colleges = data ?? [];
+  const total  = colleges.length;
+  const pages  = Math.ceil(total / PER_PAGE);
+  const paged  = colleges.slice((page - 1) * PER_PAGE, page * PER_PAGE);
 
   const totalStudents = colleges.reduce((a, c) => a + (c.students ?? 0), 0);
   const avgEI = colleges.length
@@ -271,12 +274,13 @@ export default function CollegeManagement() {
 
       {/* Add dialog */}
       {showAdd && (
-        <CollegeFormDialog open={showAdd} onOpenChange={setShowAdd} college={null} />
+        <CollegeFormDialog key="add" open={showAdd} onOpenChange={setShowAdd} college={null} />
       )}
 
       {/* Edit dialog */}
       {editTarget && (
         <CollegeFormDialog
+          key={editTarget.id}
           open={!!editTarget}
           onOpenChange={(open) => { if (!open) setEditTarget(null); }}
           college={editTarget}
@@ -335,13 +339,13 @@ export default function CollegeManagement() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {colleges.length === 0 ? (
+            {paged.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} className="text-center py-10 text-gray-400">
                   No colleges found. Add one to get started.
                 </TableCell>
               </TableRow>
-            ) : colleges.map(c => (
+            ) : paged.map(c => (
               <TableRow key={c.id} className="hover:bg-gray-50">
 
                 {/* Name */}
@@ -422,6 +426,26 @@ export default function CollegeManagement() {
             ))}
           </TableBody>
         </Table>
+        {pages > 1 && (
+          <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100 bg-gray-50">
+            <p className="text-xs text-gray-500">
+              Showing {total === 0 ? 0 : Math.min((page - 1) * PER_PAGE + 1, total)}–{Math.min(page * PER_PAGE, total)} of {total} colleges
+            </p>
+            <div className="flex gap-1">
+              {Array.from({ length: pages }, (_, i) => i + 1).map((p) => (
+                <Button
+                  key={p}
+                  variant={page === p ? 'default' : 'ghost'}
+                  size="icon"
+                  className={`w-7 h-7 text-xs ${page !== p ? 'text-gray-600 hover:bg-gray-200' : ''}`}
+                  onClick={() => setPage(p)}
+                >
+                  {p}
+                </Button>
+              ))}
+            </div>
+          </div>
+        )}
       </Card>
     </div>
   );

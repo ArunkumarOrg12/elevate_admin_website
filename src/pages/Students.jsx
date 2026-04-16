@@ -26,6 +26,7 @@ import { useGetAllStudents, useDeleteStudent, useBulkUploadStudents } from "../c
 import AddStudentDialog from "../components/AddStudentPopUp";
 import StudentDetailDialog from "../components/studentDetailDialog";
 import { useAuth } from "../hooks/useAuth";
+import { useFilters } from "../context/FilterContext";
 import EditStudentDialog from "../components/UpdateStudentPopUp";
 import downloadCSV from "../utils/downloadCSV";
 import { handleFileUpload } from "../utils/handleFileUpload";
@@ -63,8 +64,15 @@ export default function Students() {
   const [editStudent, setEditStudent] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
 
-  const { user } = useAuth();
-  const { data: responseData, isLoading, isError } = useGetAllStudents();
+  const { user, isSuperAdmin } = useAuth();
+  const { selectedCollege } = useFilters();
+
+  // superadmin: fetch by selected college (college_id param); college_admin: scoped by JWT
+  const effectiveCollegeId = isSuperAdmin ? selectedCollege?.id : user?.college_id;
+  const { data: responseData, isLoading, isError } = useGetAllStudents({
+    isSuperAdmin,
+    collegeId: selectedCollege?.id ?? null,
+  });
   const deleteStudentMutation = useDeleteStudent();
 
   const rawStudents = Array.isArray(responseData)
@@ -168,7 +176,7 @@ export default function Students() {
   console.log("Imported students:", data);
   const mapped = data.map((student) => ({
     ...student,
-    college_id: user?.college_id, // assign logged-in user's college
+    college_id: effectiveCollegeId, // assign selected college (superadmin) or user's college
     department_id: student.department_id || DEFAULT_DEPARTMENT_ID, // optional fallback
   }));
 
@@ -187,15 +195,15 @@ export default function Students() {
       <AddStudentDialog
         open={showAddDialog}
         onOpenChange={setShowAddDialog}
-        collegeId={user?.college_id}
+        collegeId={effectiveCollegeId}
       />
 
       <EditStudentDialog
-  open={!!editStudent}
-  onOpenChange={(open) => { if (!open) setEditStudent(null); }}
-  student={editStudent}
-  collegeId={user?.college_id}
-/>
+        open={!!editStudent}
+        onOpenChange={(open) => { if (!open) setEditStudent(null); }}
+        student={editStudent}
+        collegeId={effectiveCollegeId}
+      />
 
 
 
@@ -369,7 +377,7 @@ export default function Students() {
                     </div>
                     <div>
                       <div className="text-sm font-medium text-gray-900">{s.name}</div>
-                      <div className="text-xs text-gray-400">{s.roll} · {s.email} ·  {s.dept} · {s.year}</div>
+                      <div className="text-xs text-gray-400">{s.roll} · {s.email} · {s.dept} · {s.year}</div>
                     </div>
                   </div>
                 </TableCell>

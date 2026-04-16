@@ -4,41 +4,88 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { buttonVariants } from '@/components/ui/button';
 
-function Calendar({ className, classNames, showOutsideDays = true, ...props }) {
+function Calendar({
+  className,
+  classNames,
+  showOutsideDays = true,
+  captionLayout = 'dropdown',
+  ...props
+}) {
   return (
     <DayPicker
       showOutsideDays={showOutsideDays}
+      captionLayout={captionLayout}
       className={cn('p-3', className)}
       classNames={{
         months: 'flex flex-col sm:flex-row gap-2',
         month: 'flex flex-col gap-4',
-        month_caption: 'flex justify-center pt-1 relative items-center w-full',
-        caption_label: 'text-sm font-semibold text-gray-900',
-        nav: 'flex items-center gap-1',
+
+        // ✅ FIX 1: Use relative positioning container for caption
+        month_caption: 'flex justify-center pt-1 relative items-center w-full h-9',
+
+        // ✅ FIX 2: Hide the plain text label — dropdowns replace it
+        caption_label: 'hidden',
+
+        // ✅ FIX 3: Dropdowns are now the sole caption content, centered
+        dropdowns: 'flex items-center gap-1.5',
+        dropdown:
+          'text-sm font-medium border border-gray-200 rounded-md px-2 py-1 bg-white ' +
+          'text-gray-800 cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500 ' +
+          'hover:border-indigo-400 transition-colors',
+        dropdown_month: '',
+        dropdown_year: '',
+
+        // ✅ FIX 4: Nav buttons absolutely pinned to left/right of caption row
+        nav: 'flex items-center',
         button_previous: cn(
           buttonVariants({ variant: 'outline' }),
-          'absolute left-1 h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 border-gray-200'
+          'absolute left-1 top-1/2 -translate-y-1/2 h-7 w-7 bg-transparent p-0 ' +
+            'opacity-50 hover:opacity-100 border-gray-200 hover:border-indigo-400 transition-all'
         ),
         button_next: cn(
           buttonVariants({ variant: 'outline' }),
-          'absolute right-1 h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 border-gray-200'
+          'absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 bg-transparent p-0 ' +
+            'opacity-50 hover:opacity-100 border-gray-200 hover:border-indigo-400 transition-all'
         ),
+
+        // Grid
         month_grid: 'w-full border-collapse',
         weekdays: 'flex',
-        weekday: 'text-gray-400 rounded-md w-8 font-medium text-[0.75rem] text-center py-1',
+        weekday:
+          'text-gray-400 rounded-md w-8 font-medium text-[0.75rem] text-center py-1',
         week: 'flex w-full mt-1',
-        day: 'relative p-0 text-center text-sm focus-within:relative focus-within:z-20 [&:has([aria-selected])]:bg-indigo-50 [&:has([aria-selected].day-range-end)]:rounded-r-md first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md',
+
+        // Day cells
+        day:
+          'relative p-0 text-center text-sm focus-within:relative focus-within:z-20 ' +
+          '[&:has([aria-selected])]:bg-indigo-50 ' +
+          '[&:has([aria-selected].day-range-end)]:rounded-r-md ' +
+          'first:[&:has([aria-selected])]:rounded-l-md ' +
+          'last:[&:has([aria-selected])]:rounded-r-md',
         day_button: cn(
           buttonVariants({ variant: 'ghost' }),
-          'h-8 w-8 p-0 font-normal text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 aria-selected:opacity-100'
+          'h-8 w-8 p-0 font-normal text-gray-700 ' +
+            'hover:bg-indigo-50 hover:text-indigo-700 ' +
+            'aria-selected:opacity-100 transition-colors rounded-md'
         ),
+
+        // States
         range_end: 'day-range-end',
-        selected: 'bg-indigo-600 text-white hover:bg-indigo-600 hover:text-white focus:bg-indigo-600 focus:text-white rounded-md [&>button]:bg-indigo-600 [&>button]:text-white [&>button]:hover:bg-indigo-600 [&>button]:hover:text-white',
-        today: '[&>button]:bg-indigo-50 [&>button]:text-indigo-700 [&>button]:font-semibold rounded-md',
-        outside: 'day-outside [&>button]:text-gray-300',
-        disabled: '[&>button]:text-gray-300 [&>button]:opacity-50 [&>button]:cursor-not-allowed',
-        range_middle: 'aria-selected:bg-indigo-50 aria-selected:text-indigo-700',
+        selected:
+          'bg-indigo-600 text-white hover:bg-indigo-600 hover:text-white ' +
+          'focus:bg-indigo-600 focus:text-white rounded-md ' +
+          '[&>button]:bg-indigo-600 [&>button]:text-white ' +
+          '[&>button]:hover:bg-indigo-600 [&>button]:hover:text-white',
+        today:
+          '[&>button]:bg-indigo-50 [&>button]:text-indigo-700 ' +
+          '[&>button]:font-semibold rounded-md',
+        outside: 'day-outside [&>button]:text-gray-300 [&>button]:opacity-60',
+        disabled:
+          '[&>button]:text-gray-300 [&>button]:opacity-40 [&>button]:cursor-not-allowed',
+        range_middle:
+          'aria-selected:bg-indigo-50 aria-selected:text-indigo-700',
         hidden: 'invisible',
+
         ...classNames,
       }}
       components={{
@@ -53,6 +100,7 @@ function Calendar({ className, classNames, showOutsideDays = true, ...props }) {
     />
   );
 }
+
 Calendar.displayName = 'Calendar';
 
 export { Calendar };

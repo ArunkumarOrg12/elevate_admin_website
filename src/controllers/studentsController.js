@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "../services/api";
-import { ADMIN_PATHS, QUERY_KEYS, STUDENT_API } from "../constants/apiUrlConstant";
+import { STUDENT_API } from "../constants/apiUrlConstant";
 
 // ── API functions ─────────────────────────────────────────────────────────────
 const studentsApi = {
@@ -12,15 +12,22 @@ const studentsApi = {
 };
 
 // ── Get all students ──────────────────────────────────────────────────────────
-export const useGetAllStudents = () => {
+// isSuperAdmin=true  → GET /student?college_id=xxx  (superadmin, scoped by selected college)
+// isSuperAdmin=false → GET /student/my-college/students  (college_admin, scoped by JWT)
+export const useGetAllStudents = ({ isSuperAdmin = false, collegeId = null } = {}) => {
   return useQuery({
-    queryKey: ["students"],
+    queryKey: ["students", isSuperAdmin ? collegeId : "my-college"],
     queryFn: async () => {
-      const response = await api.get(STUDENT_API.GET_ALL_STUDENTS);
-      // Backend returns { data: rows, pagination: {...} }
-      // api interceptor unwraps res.data, so response IS the body
-      return response.data ?? response; // handle both shapes
+      let response;
+      if (isSuperAdmin) {
+        const params = collegeId ? { college_id: collegeId, limit: 500 } : { limit: 500 };
+        response = await api.get(STUDENT_API.GET_ALL_STUDENTS, { params });
+      } else {
+        response = await api.get(STUDENT_API.GET_MY_COLLEGE_STUDENTS);
+      }
+      return response.data ?? response;
     },
+    enabled: true,
   });
 };
 

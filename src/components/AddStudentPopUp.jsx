@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { format } from "date-fns";
+import { Calendar as CalendarIcon } from "lucide-react";
 import {
   Dialog, DialogContent, DialogHeader,
   DialogTitle, DialogDescription, DialogFooter,
@@ -10,8 +12,11 @@ import {
   Select, SelectTrigger, SelectContent,
   SelectItem, SelectValue,
 } from "../components/ui/select";
+import { Popover, PopoverTrigger, PopoverContent } from "../components/ui/popover";
+import { Calendar } from "../components/ui/calendar";
 import { useCreateStudent, useGetDepartments } from "../controllers/studentsController";
 import { useGetPrograms } from "../controllers/programController";
+import { useColleges } from "../controllers/collegesController";
 
 const GENDERS = ["Male", "Female", "Other"];
 
@@ -25,11 +30,12 @@ const DURATIONS = [3, 4, 5]; // years
 
 const EMPTY_FORM = {
   first_name: "", last_name: "", email: "",
+  college_id: "",
   department_id: "",
-  program_id: "",           
+  program_id: "",
   batch_start: "", batch_duration: "4",
   current_semester: "",
-  date_of_birth: "", gender: "",
+  date_of_birth: null, gender: "",
 };
 
 // Auto-generate enrollment number
@@ -40,98 +46,101 @@ function generateEnrollmentNumber(deptCode = "GEN", batchStart = "") {
 }
 
 export default function AddStudentPopUp({ open, onOpenChange, onAddStudent, collegeId }) {
-  const [form, setForm] = useState(EMPTY_FORM);
+  const [form, setForm] = useState(() => ({ ...EMPTY_FORM, college_id: collegeId || "" }));
   const [errors, setErrors] = useState({});
-  const [createdStudent, setCreatedStudent] = useState(null); // show after success
+  const [createdStudent, setCreatedStudent] = useState(null);
+  const [dobOpen, setDobOpen] = useState(false);
 
   const createStudentMutation = useCreateStudent();
-  const { data: departments = [], isLoading: deptsLoading } = useGetDepartments(collegeId);
-const { data: programs = [], isLoading: programsLoading } = useGetPrograms(
-  collegeId,
-  form.department_id || undefined   // ← only fetch when department selected
-);
+  const { data: colleges = [], isLoading: collegesLoading } = useColleges();
+  const activeCollegeId = form.college_id || collegeId;
+  const { data: departments = [], isLoading: deptsLoading } = useGetDepartments(activeCollegeId);
+  const { data: programs = [], isLoading: programsLoading } = useGetPrograms(
+    activeCollegeId,
+    form.department_id || undefined
+  );
 
   const batchYear = form.batch_start && form.batch_duration
     ? `${form.batch_start}-${Number(form.batch_start) + Number(form.batch_duration)}`
     : "";
 
-const validate = () => {
-  const e = {};
+  const validate = () => {
+    const e = {};
 
-  // ... your existing validations ...
+    // ... your existing validations ...
 
-  // ✅ Batch start can't be in the future
-  if (form.batch_start && Number(form.batch_start) > currentYear) {
-    e.batch_start = "Batch cannot start in the future";
-  }
-
-  // ✅ Batch must not have fully ended
-  if (form.batch_start && form.batch_duration) {
-    const endYear = Number(form.batch_start) + Number(form.batch_duration);
-    if (endYear < currentYear) {
-      e.batch_start = `This batch ended in ${endYear}. Cannot add students to a completed batch.`;
+    // ✅ Batch start can't be in the future
+    if (form.batch_start && Number(form.batch_start) > currentYear) {
+      e.batch_start = "Batch cannot start in the future";
     }
-  }
 
-  // ✅ Semester must be in the valid range for selected batch
-  const validSems = getAvailableSemesters();
-  if (form.current_semester && !validSems.includes(Number(form.current_semester))) {
-    e.current_semester = "Semester is not valid for the selected batch and current date";
-  }
+    // ✅ Batch must not have fully ended
+    if (form.batch_start && form.batch_duration) {
+      const endYear = Number(form.batch_start) + Number(form.batch_duration);
+      if (endYear < currentYear) {
+        e.batch_start = `This batch ended in ${endYear}. Cannot add students to a completed batch.`;
+      }
+    }
 
-  // ✅ Age validation — must be between 15 and 35
-  if (form.date_of_birth) {
-    const dob = new Date(form.date_of_birth);
-    const age = (new Date() - dob) / (1000 * 60 * 60 * 24 * 365.25);
-    if (age < 15) e.date_of_birth = "Student must be at least 15 years old";
-    if (age > 35) e.date_of_birth = "Age seems too high — please verify";
-  }
+    // ✅ Semester must be in the valid range for selected batch
+    const validSems = getAvailableSemesters();
+    if (form.current_semester && !validSems.includes(Number(form.current_semester))) {
+      e.current_semester = "Semester is not valid for the selected batch and current date";
+    }
 
-  // ✅ Email must match college domain (optional but professional)
-  // Uncomment and set your domain if you want this:
-  // if (form.email && !form.email.endsWith("@vit.ac.in")) {
-  //   e.email = "Must use official college email (@vit.ac.in)";
-  // }
+    // ✅ Age validation — must be between 15 and 35
+    if (form.date_of_birth) {
+      const dob = form.date_of_birth instanceof Date ? form.date_of_birth : new Date(form.date_of_birth);
+      const age = (new Date() - dob) / (1000 * 60 * 60 * 24 * 365.25);
+      if (age < 15) e.date_of_birth = "Student must be at least 15 years old";
+      if (age > 35) e.date_of_birth = "Age seems too high — please verify";
+    }
 
-  setErrors(e);
-  return Object.keys(e).length === 0;
-};
+    // ✅ Email must match college domain (optional but professional)
+    // Uncomment and set your domain if you want this:
+    // if (form.email && !form.email.endsWith("@vit.ac.in")) {
+    //   e.email = "Must use official college email (@vit.ac.in)";
+    // }
 
-const getAvailableSemesters = () => {
-  if (!form.batch_start || !form.batch_duration) return [];
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  };
 
-  const startYear     = Number(form.batch_start);
-  const duration      = Number(form.batch_duration);
-  const totalSems     = duration * 2;
-  const now           = new Date();
-  const currentYear   = now.getFullYear();
-  const currentMonth  = now.getMonth() + 1; // 1–12
+  const getAvailableSemesters = () => {
+    if (!form.batch_start || !form.batch_duration) return [];
 
-  if (startYear > currentYear) return []; // future batch — no semesters yet
+    const startYear = Number(form.batch_start);
+    const duration = Number(form.batch_duration);
+    const totalSems = duration * 2;
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth() + 1; // 1–12
 
-  // How many 6-month blocks have elapsed since batch start (July of start year)?
-  // Sem 1: Jul–Dec of startYear
-  // Sem 2: Jan–Jun of startYear+1
-  // Sem 3: Jul–Dec of startYear+1 ...
-  const monthsElapsed =
-    (currentYear - startYear) * 12 + (currentMonth - 7); // July = month 7 = sem1 start
+    if (startYear > currentYear) return []; // future batch — no semesters yet
 
-  // Each semester = 6 months. +1 because we're *in* the current semester
-  const currentSem = Math.floor(monthsElapsed / 6) + 1;
+    // How many 6-month blocks have elapsed since batch start (July of start year)?
+    // Sem 1: Jul–Dec of startYear
+    // Sem 2: Jan–Jun of startYear+1
+    // Sem 3: Jul–Dec of startYear+1 ...
+    const monthsElapsed =
+      (currentYear - startYear) * 12 + (currentMonth - 7); // July = month 7 = sem1 start
 
-  // Clamp between 1 and totalSems
-  const maxSem = Math.min(Math.max(currentSem, 1), totalSems);
+    // Each semester = 6 months. +1 because we're *in* the current semester
+    const currentSem = Math.floor(monthsElapsed / 6) + 1;
 
-  return Array.from({ length: maxSem }, (_, i) => i + 1);
-};
+    // Clamp between 1 and totalSems
+    const maxSem = Math.min(Math.max(currentSem, 1), totalSems);
+
+    return Array.from({ length: maxSem }, (_, i) => i + 1);
+  };
 
 
-  
+
 
   const handleSubmit = () => {
     if (!validate()) return;
-    if (!collegeId) {
-      alert("College context missing. Please refresh and try again.");
+    if (!form.college_id && !collegeId) {
+      alert("Please select a college.");
       return;
     }
 
@@ -139,17 +148,17 @@ const getAvailableSemesters = () => {
     const enrollmentNumber = generateEnrollmentNumber(selectedDept?.code, form.batch_start);
 
     createStudentMutation.mutate({
-       first_name:        form.first_name,
-  last_name:         form.last_name,
-  email:             form.email,
-  college_id:        collegeId,
-  department_id:     form.department_id,
-  program_id:        form.program_id,      // ← add this
-  enrollment_number: enrollmentNumber,
-  batch_year:        batchYear,
-  current_semester:  Number(form.current_semester),
-  date_of_birth:     form.date_of_birth,
-  gender:            form.gender,
+      first_name: form.first_name,
+      last_name: form.last_name,
+      email: form.email,
+      college_id: form.college_id || collegeId,
+      department_id: form.department_id,
+      program_id: form.program_id,      // ← add this
+      enrollment_number: enrollmentNumber,
+      batch_year: batchYear ? String(batchYear) : undefined,
+      current_semester: Number(form.current_semester),
+      date_of_birth: form.date_of_birth ? form.date_of_birth.toISOString().split("T")[0] : undefined,
+      gender: form.gender,
     }, {
       onSuccess: (data) => {
         setCreatedStudent({ ...data, enrollment_number: enrollmentNumber });
@@ -159,7 +168,7 @@ const getAvailableSemesters = () => {
   };
 
   const handleClose = () => {
-    setForm(EMPTY_FORM);
+    setForm({ ...EMPTY_FORM, college_id: collegeId || "" });
     setErrors({});
     setCreatedStudent(null);
     onOpenChange(false);
@@ -176,11 +185,11 @@ const getAvailableSemesters = () => {
   );
 
   useEffect(() => {
-  const validSems = getAvailableSemesters();
-  if (!validSems.includes(Number(form.current_semester))) {
-    setForm((p) => ({ ...p, current_semester: "" }));
-  }
-}, [form.batch_start, form.batch_duration]);
+    const validSems = getAvailableSemesters();
+    if (!validSems.includes(Number(form.current_semester))) {
+      setForm((p) => ({ ...p, current_semester: "" }));
+    }
+  }, [form.batch_start, form.batch_duration]);
 
   // ── Success screen ──────────────────────────────────────────────
   if (createdStudent) {
@@ -256,11 +265,33 @@ const getAvailableSemesters = () => {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label className="mb-2">Date of Birth</Label>
-              <Input
-  type="date"
-  max={new Date().toISOString().split("T")[0]} // ✅ prevents future dates
-  {...field("date_of_birth")}
-/>
+              <Popover open={dobOpen} onOpenChange={setDobOpen}>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    className={`flex h-9 w-full items-center gap-2 rounded-[9px] border px-3 py-1.5 text-sm ${errors.date_of_birth ? "border-red-400" : "border-gray-200"
+                      } bg-white ${form.date_of_birth ? "text-gray-900" : "text-gray-400"}`}
+                  >
+                    <CalendarIcon size={14} className="text-gray-400 flex-shrink-0" />
+                    {form.date_of_birth ? format(form.date_of_birth, "dd MMM yyyy") : "Pick date"}
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent align="start" className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={form.date_of_birth}
+                    onSelect={(d) => {
+                      setForm((p) => ({ ...p, date_of_birth: d ?? null }));
+                      setDobOpen(false);
+                    }}
+                    captionLayout="dropdown"
+                    startMonth={new Date(1950, 0)}
+                    endMonth={new Date()}
+                    disabled={(date) => date > new Date()}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
               {err("date_of_birth")}
             </div>
             <div>
@@ -282,63 +313,83 @@ const getAvailableSemesters = () => {
             Academic Information
           </p>
 
-         {/* Department */}
-<div>
-  <Label className="mb-2">Department</Label>
-  <Select
-    value={form.department_id}
-    onValueChange={(v) => setForm((p) => ({ ...p, department_id: v, program_id: "" }))}
-    disabled={deptsLoading || !collegeId}
-  >
-    <SelectTrigger className={errors.department_id ? "border-red-400" : ""}>
-      <SelectValue placeholder={
-        !collegeId               ? "No college context" :
-        deptsLoading             ? "Loading…" :
-        departments.length === 0 ? "No departments found" :
-        "Select department"
-      } />
-    </SelectTrigger>
-    <SelectContent>
-      {departments.map((d) => (
-        <SelectItem key={d.id} value={String(d.id)}>{d.name}</SelectItem>
-      ))}
-    </SelectContent>
-  </Select>
-  {err("department_id")}
-</div>
+          {/* College */}
+          <div>
+            <Label className="mb-2">College</Label>
+            <Select
+              value={form.college_id}
+              onValueChange={(v) => setForm((p) => ({ ...p, college_id: v, department_id: "", program_id: "" }))}
+              disabled={collegesLoading}
+            >
+              <SelectTrigger className={errors.college_id ? "border-red-400" : ""}>
+                <SelectValue placeholder={collegesLoading ? "Loading…" : "Select college"} />
+              </SelectTrigger>
+              <SelectContent>
+                {colleges.map((c) => (
+                  <SelectItem key={c.id} value={String(c.id)}>{c.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {err("college_id")}
+          </div>
 
-{/* Program — only shown after department is selected */}
-{form.department_id && (
-  <div>
-    <Label className="mb-2">Program</Label>
-    <Select
-      value={form.program_id}
-      onValueChange={(v) => setForm((p) => ({ ...p, program_id: v }))}
-      disabled={programsLoading}
-    >
-      <SelectTrigger className={errors.program_id ? "border-red-400" : ""}>
-        <SelectValue placeholder={
-          programsLoading          ? "Loading…" :
-          programs.length === 0    ? "No programs found for this department" :
-          "Select program"
-        } />
-      </SelectTrigger>
-      <SelectContent>
-        {programs.map((p) => (
-          <SelectItem key={p.id} value={String(p.id)}>
-            {p.name} {p.code ? `(${p.code})` : ""}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
-    {err("program_id")}
-    {!programsLoading && programs.length === 0 && (
-      <p className="text-xs text-amber-600 mt-1">
-        No programs found. Add programs to this department first.
-      </p>
-    )}
-  </div>
-)}
+          {/* Department */}
+          <div>
+            <Label className="mb-2">Department</Label>
+            <Select
+              value={form.department_id}
+              onValueChange={(v) => setForm((p) => ({ ...p, department_id: v, program_id: "" }))}
+              disabled={deptsLoading || !activeCollegeId}
+            >
+              <SelectTrigger className={errors.department_id ? "border-red-400" : ""}>
+                <SelectValue placeholder={
+                  !activeCollegeId ? "Select college first" :
+                    deptsLoading ? "Loading…" :
+                      departments.length === 0 ? "No departments found" :
+                        "Select department"
+                } />
+              </SelectTrigger>
+              <SelectContent>
+                {departments.map((d) => (
+                  <SelectItem key={d.id} value={String(d.id)}>{d.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {err("department_id")}
+          </div>
+
+          {/* Program — only shown after department is selected */}
+          {form.department_id && (
+            <div>
+              <Label className="mb-2">Program</Label>
+              <Select
+                value={form.program_id}
+                onValueChange={(v) => setForm((p) => ({ ...p, program_id: v }))}
+                disabled={programsLoading}
+              >
+                <SelectTrigger className={errors.program_id ? "border-red-400" : ""}>
+                  <SelectValue placeholder={
+                    programsLoading ? "Loading…" :
+                      programs.length === 0 ? "No programs found for this department" :
+                        "Select program"
+                  } />
+                </SelectTrigger>
+                <SelectContent>
+                  {programs.map((p) => (
+                    <SelectItem key={p.id} value={String(p.id)}>
+                      {p.name} {p.code ? `(${p.code})` : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {err("program_id")}
+              {!programsLoading && programs.length === 0 && (
+                <p className="text-xs text-amber-600 mt-1">
+                  No programs found. Add programs to this department first.
+                </p>
+              )}
+            </div>
+          )}
 
           <div className="grid grid-cols-3 gap-4">
             <div>
@@ -383,25 +434,25 @@ const getAvailableSemesters = () => {
               <SelectTrigger className={errors.current_semester ? "border-red-400" : ""}>
                 <SelectValue placeholder="Select semester" />
               </SelectTrigger>
-             <SelectContent>
-  {getAvailableSemesters().map((s) => {
-    const isLast = s === getAvailableSemesters().length;
-    return (
-      <SelectItem key={s} value={String(s)}>
-        Semester {s} {isLast ? "· Current" : "· Completed"}
-      </SelectItem>
-    );
-  })}
-  {getAvailableSemesters().length === 0 && (
-    <div className="px-3 py-2 text-xs text-gray-400">
-      {!form.batch_start
-        ? "Select batch start year first"
-        : Number(form.batch_start) > currentYear
-        ? "Future batch — no active semesters"
-        : "No active semesters for this batch"}
-    </div>
-  )}
-</SelectContent>
+              <SelectContent>
+                {getAvailableSemesters().map((s) => {
+                  const isLast = s === getAvailableSemesters().length;
+                  return (
+                    <SelectItem key={s} value={String(s)}>
+                      Semester {s} {isLast ? "· Current" : "· Completed"}
+                    </SelectItem>
+                  );
+                })}
+                {getAvailableSemesters().length === 0 && (
+                  <div className="px-3 py-2 text-xs text-gray-400">
+                    {!form.batch_start
+                      ? "Select batch start year first"
+                      : Number(form.batch_start) > currentYear
+                        ? "Future batch — no active semesters"
+                        : "No active semesters for this batch"}
+                  </div>
+                )}
+              </SelectContent>
             </Select>
             {err("current_semester")}
           </div>
@@ -418,8 +469,8 @@ const getAvailableSemesters = () => {
         {createStudentMutation.isError && (
           <p className="text-sm text-red-500 mt-2 text-center">
             {createStudentMutation.error?.response?.data?.error ||
-             createStudentMutation.error?.message ||
-             "Something went wrong. Please try again."}
+              createStudentMutation.error?.message ||
+              "Something went wrong. Please try again."}
           </p>
         )}
       </DialogContent>

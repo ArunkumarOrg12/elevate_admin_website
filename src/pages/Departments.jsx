@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '@/components/ui/table';
 import { useAuth } from '../hooks/useAuth';
+import { useFilters } from '../context/FilterContext';
 import { useNavigate } from 'react-router-dom';
 import {
   useDepartments,
@@ -16,12 +17,15 @@ import {
 } from '../controllers/departmentsController';
 
 export default function Departments() {
-  const { user } = useAuth();
+  const { user, isSuperAdmin } = useAuth();
+  const { selectedCollege } = useFilters();
   const navigate = useNavigate();
 
+  const effectiveCollegeId = isSuperAdmin ? selectedCollege?.id : user?.college_id;
+
   const { data: departments = [], isLoading, refetch } = useDepartments(
-  user?.college_id ? { college_id: user.college_id } : undefined
-);
+    effectiveCollegeId ? { college_id: effectiveCollegeId } : undefined
+  );
 
   const createDepartment = useCreateDepartment();
   const updateDepartment = useUpdateDepartment();
@@ -32,6 +36,8 @@ export default function Departments() {
   const [formData, setFormData]           = useState({ name: '', code: '', hod_name: '', contact_email: '' });
   const [formErrors, setFormErrors]       = useState({});
   const [deleteTarget, setDeleteTarget]   = useState(null);
+  const [page, setPage]                   = useState(1);
+  const PER_PAGE = 8;
 
   const validate = () => {
     const e = {};
@@ -45,7 +51,7 @@ export default function Departments() {
     if (!validate()) return;
     const payload = {
       ...formData,
-      college_id: user?.college_id,
+      college_id: effectiveCollegeId,
     };
     try {
       if (isEditMode) {
@@ -86,6 +92,10 @@ export default function Departments() {
   });
 
   const err = (key) => formErrors[key] && <p className="text-xs text-red-500 mt-0.5">{formErrors[key]}</p>;
+
+  const total = departments.length;
+  const pages = Math.ceil(total / PER_PAGE);
+  const paged = departments.slice((page - 1) * PER_PAGE, page * PER_PAGE);
 
   return (
     <div className="page-enter space-y-5">
@@ -135,7 +145,7 @@ export default function Departments() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {departments.map((d) => (
+                {paged.map((d) => (
                   <TableRow key={d.id} className="hover:bg-gray-50">
                     <TableCell>
                       <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700">
@@ -154,7 +164,7 @@ export default function Departments() {
                     </TableCell>
                     <TableCell>
                       <button
-                        onClick={() => navigate(`/programs?department_id=${d.id}&department_name=${encodeURIComponent(d.name)}&college_id=${user?.college_id}`)}
+                        onClick={() => navigate(`/programs?department_id=${d.id}&department_name=${encodeURIComponent(d.name)}&college_id=${effectiveCollegeId}`)}
                         className="flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-800 font-medium"
                       >
                         View Programs <ArrowRight size={12} />
@@ -175,12 +185,32 @@ export default function Departments() {
               </TableBody>
             </Table>
           )}
+          {pages > 1 && (
+            <div className="flex items-center justify-between px-4 py-3 border-t border-gray-100 bg-gray-50">
+              <p className="text-xs text-gray-500">
+                Showing {total === 0 ? 0 : Math.min((page - 1) * PER_PAGE + 1, total)}–{Math.min(page * PER_PAGE, total)} of {total} departments
+              </p>
+              <div className="flex gap-1">
+                {Array.from({ length: pages }, (_, i) => i + 1).map((p) => (
+                  <Button
+                    key={p}
+                    variant={page === p ? 'default' : 'ghost'}
+                    size="icon"
+                    className={`w-7 h-7 text-xs ${page !== p ? 'text-gray-600 hover:bg-gray-200' : ''}`}
+                    onClick={() => setPage(p)}
+                  >
+                    {p}
+                  </Button>
+                ))}
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
       {/* Add / Edit Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg p-4">
           <DialogHeader>
             <DialogTitle>{isEditMode ? 'Edit Department' : 'Add Department'}</DialogTitle>
             <DialogDescription>

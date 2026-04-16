@@ -1,7 +1,8 @@
-import { useState, useContext } from 'react';
+import { useContext } from 'react';
 import { Bell, Search, ChevronDown, LogOut, User, Menu } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { SidebarContext } from '../../context/SidebarContext';
+import { useFilters } from '../../context/FilterContext';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -22,31 +23,39 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 
-const COLLEGES = [
-  'Presidency Engineering College',
-  'PSG College of Technology',
-  'SSN College of Engineering',
-  'Kumaraguru College of Technology',
-];
-
-const AY_OPTIONS = ['2024-25', '2023-24', '2022-23'];
-const BATCH_OPTIONS = ['Batch 2025', 'Batch 2024', 'Batch 2023'];
-
 export default function Header() {
   const { user, logout, isSuperAdmin } = useAuth();
   const { setMobileOpen } = useContext(SidebarContext);
   const navigate = useNavigate();
-  const [selectedCollege, setSelectedCollege] = useState(
-    isSuperAdmin ? COLLEGES[0] : user?.college?.name
-  );
-  const [selectedAY, setSelectedAY] = useState('2024-25');
-  const [selectedBatch, setSelectedBatch] = useState('Batch 2025');
 
-  const initials = user?.name?.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase() || 'AD';
+  const {
+    colleges,
+    collegesLoading,
+    selectedCollege,
+    setSelectedCollege,
+    ayOptions,
+    selectedAY,
+    setSelectedAY,
+    batchOptions,
+    selectedBatch,
+    setSelectedBatch,
+  } = useFilters();
+
+  const displayName = user?.name
+    ?? (user?.first_name && user?.last_name ? `${user.first_name} ${user.last_name}` : null)
+    ?? user?.email
+    ?? 'Admin';
+  const initials = displayName.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+
 
   const handleLogout = async () => {
     await logout();
     navigate('/sign-in');
+  };
+
+  const handleCollegeChange = (id) => {
+    const college = colleges.find(c => (c.id ?? c._id) === id);
+    if (college) setSelectedCollege(college);
   };
 
   return (
@@ -66,18 +75,30 @@ export default function Header() {
       <div className="flex items-center gap-2 flex-shrink-0">
         {/* College dropdown */}
         {isSuperAdmin ? (
-          <Select value={selectedCollege} onValueChange={setSelectedCollege}>
+          <Select
+            value={selectedCollege ? (selectedCollege.id ?? selectedCollege._id ?? '') : ''}
+            onValueChange={handleCollegeChange}
+            disabled={collegesLoading}
+          >
             <SelectTrigger className="text-sm font-medium max-w-[130px] sm:max-w-[200px] md:max-w-none">
-              <SelectValue />
+              <SelectValue placeholder={collegesLoading ? 'Loading…' : 'Select college'} />
             </SelectTrigger>
             <SelectContent>
-              {COLLEGES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+              {colleges.map(c => {
+                const cid = c.id ?? c._id;
+                return (
+                  <SelectItem key={cid} value={cid}>
+                    {c.name}
+                  </SelectItem>
+                );
+              })}
             </SelectContent>
           </Select>
         ) : (
-          <div className="text-sm font-medium border border-gray-200 rounded-[9px] px-3 py-1.5 text-gray-600 bg-gray-50 max-w-[130px] sm:max-w-[200px] md:max-w-none truncate">
-            {user?.college?.name}
-          </div>
+          // <div className="text-sm font-medium border border-gray-200 rounded-[9px] px-3 py-1.5 text-gray-600 bg-gray-50 max-w-[130px] sm:max-w-[200px] md:max-w-none truncate">
+          //   {selectedCollege?.name ?? user?.college?.name}
+          // </div>
+          <></>
         )}
 
         {/* AY — hidden on mobile */}
@@ -87,22 +108,22 @@ export default function Header() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {AY_OPTIONS.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
+              {ayOptions.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>
 
         {/* Batch — hidden on mobile */}
-        <div className="hidden sm:block">
+        {/* <div className="hidden sm:block">
           <Select value={selectedBatch} onValueChange={setSelectedBatch}>
             <SelectTrigger className="text-sm w-[110px]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {BATCH_OPTIONS.map(b => <SelectItem key={b} value={b}>{b}</SelectItem>)}
+              {batchOptions.map(b => <SelectItem key={b} value={b}>{b}</SelectItem>)}
             </SelectContent>
           </Select>
-        </div>
+        </div> */}
       </div>
 
       {/* Search — hidden on mobile */}
@@ -131,36 +152,40 @@ export default function Header() {
           <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center pointer-events-none">2</span>
         </div>
 
-        {/* Profile dropdown */}
+        {/* Profile */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="flex items-center gap-2 px-2 py-1.5 h-auto">
-              <Avatar className="h-8 w-8">
-                <AvatarFallback className="text-xs">{initials}</AvatarFallback>
-              </Avatar>
-              <div className="text-left hidden md:block">
-                <div className="text-sm font-medium text-gray-900 leading-tight">{user?.name}</div>
-                <div className="text-xs text-gray-500 leading-tight">{user?.designation}</div>
+            <button className="flex items-center gap-2.5 pl-1 pr-2 py-1 rounded-xl hover:bg-gray-100 transition-colors group outline-none">
+              <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-white font-bold text-xs flex-shrink-0 shadow-sm shadow-indigo-200">
+                {initials}
               </div>
-              <ChevronDown size={14} className="text-gray-400 hidden md:block" />
-            </Button>
+              <div className="hidden sm:flex flex-col items-start min-w-0">
+                <span className="text-sm font-semibold text-gray-800 leading-tight truncate max-w-[110px]">
+                  {displayName}
+                </span>
+                <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-600 text-[10px] font-semibold px-1.5 py-px rounded-full border border-emerald-200 leading-none mt-0.5">
+                  <span className="w-1 h-1 rounded-full bg-emerald-500 inline-block" />
+                  {user?.role}
+                </span>
+              </div>
+              <ChevronDown
+                className="hidden sm:block text-gray-400 group-hover:text-gray-600 transition-colors flex-shrink-0"
+                style={{ width: 14, height: 14 }}
+              />
+            </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-52">
-            <DropdownMenuLabel className="normal-case text-sm font-normal px-3 py-2">
-              <div className="font-medium text-gray-900">{user?.name}</div>
-              <div className="text-xs text-gray-500">{user?.email}</div>
+          <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuLabel className="font-normal">
+              <p className="text-sm font-semibold text-gray-900 truncate">{displayName}</p>
+              <p className="text-xs text-gray-500 truncate">{user?.email}</p>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="gap-2 cursor-pointer">
-              <User size={16} />
-              My Profile
+            <DropdownMenuItem onClick={() => navigate('/settings')}>
+              <User size={14} className="mr-2" /> Profile Settings
             </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={handleLogout}
-              className="gap-2 cursor-pointer text-red-600 focus:bg-red-50 focus:text-red-600"
-            >
-              <LogOut size={16} />
-              Sign Out
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={handleLogout} className="text-red-600 focus:text-red-600">
+              <LogOut size={14} className="mr-2" /> Sign Out
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
